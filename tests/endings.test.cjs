@@ -16,7 +16,7 @@ h.run('beginTheDrive();game.story.evidence.push("pier");localStorage.setItem(SAV
 h=harness();h.run('game.player.location="station17";triggerEvent("station17",false)');assert(h.els.get('choices').children[1].textContent.includes('WATCH THE MONITOR'));
 h.run('finaleMonitor();saveGame();loadGame()');assert(h.els.get('choices').children[0].textContent.includes('READ THE LETTER'));
 for(const id of ['help','phone','coin','tape','warning','register','reserve'])for(const v of [0,1]){
- h=harness();h.run('beginTheDrive();game.player.inventory.push("strangeCoin","cassetteTape");showDecision('+JSON.stringify(id)+')');h.els.get('choices').children[v].click();h.run('saveGame();loadGame()');assert.equal(h.run('decisions()['+JSON.stringify(id)+']'),v);h.run('game.player.location=decisionMoments.find(m=>m.id==='+JSON.stringify(id)+').later;showLocationActions()');assert(h.run('game.story.callbacks['+JSON.stringify(id)+']'));if(id==='coin')assert(h.run('hasItem("strangeCoin")'));
+ h=harness();h.run('beginTheDrive();game.player.inventory.push("strangeCoin","cassetteTape");showDecision('+JSON.stringify(id)+')');h.els.get('choices').children[v].click();h.run('saveGame();loadGame()');assert.equal(h.run('decisions()['+JSON.stringify(id)+']'),v);h.run('game.player.location=decisionMoments.find(m=>m.id==='+JSON.stringify(id)+').later;for(let step=0;step<6;step++)showLocationActions()');assert(h.run('game.story.callbacks['+JSON.stringify(id)+']'));if(id==='coin')assert(h.run('hasItem("strangeCoin")'));
 }
 for(const p of fs.readdirSync(root).filter(p=>p.endsWith('.js')))new vm.Script(fs.readFileSync(root+p,'utf8'),{filename:p});
 console.log('PASS: opening/finale restore, failed load preserves progress, unified finale, all 14 decision branches persist and trigger callbacks, coin clue retained, all scripts parse.');
@@ -75,3 +75,29 @@ h=harness();h.run('game.seed='+rejectedSeed+';beginNight();beginTheDrive()');for
 h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.player.fuel=1;travelTo("citrusStand")');assert.equal(h.run('game.story.report.key'),'fuel');
 h.run('beginNight();beginTheDrive();travelTo("citrusStand")');assert.equal(h.run('game.story.passingCar.phase'),'approach');
 console.log('PASS: 90/9000 eligible seeds; single opportunity; both choices; all save phases; midnight time; no gameplay/report changes or humor aside; fuel priority and reset.');
+// A connected road journey, using rendered choices rather than assigning clues.
+h=harness();h.ready.forEach(fn=>fn());h.run('game.seed=1234;beginNight()');
+function clickText(fragment){const b=h.els.get('choices').children.find(b=>b.textContent.includes(fragment));assert(b,'Missing choice '+fragment);b.click();}
+function settle(){for(let i=0;i<30;i++){
+ const choices=h.els.get('choices').children;
+ if(choices.some(b=>b.textContent.includes('EXPLORE AREA')))return;
+ if(!choices.length){h.timers.splice(0).forEach(t=>t.f());continue;}
+ const decision=h.run('game.scene?.kind==="decision"');
+ choices[decision?1:0].click();
+ }throw Error('Scene did not settle');}
+function drive(name){clickText('DRIVE TO '+name);h.timers.splice(0).forEach(t=>t.f());settle();}
+clickText('OPEN THE LETTER');clickText('TURN LETTER OVER');clickText('START SOUTH');settle();
+drive('Roadside Citrus Stand');clickText('EXPLORE AREA');settle();assert(h.run('hasItem("coordinatesReceipt")'));
+drive('Cedar Key');drive('Old Fishing Pier');clickText('EXPLORE AREA');settle();assert(h.run('hasItem("strangeCoin")'));
+drive('Cedar Key');drive('Roadside Citrus Stand');drive('Abandoned Motel');
+clickText('EXPLORE AREA');settle();clickText('EXPLORE AREA');settle();assert(h.run('hasItem("cassetteTape")'));
+drive('Ocala National Forest');drive('Space Coast');drive('Everglades Road');
+assert(h.run('game.story.flags.pierRecognition&&game.story.flags.motelRegister&&game.story.flags.gatorHeadline&&game.story.flags.roadEcho&&game.story.flags.routeRevelation'));
+assert(h.run('game.player.discoveredLocations.includes("station17")'));
+clickText('DRIVE TO Station 17');h.timers.splice(0).forEach(t=>t.f());
+// Resolve arrival callbacks before approaching the door, if any.
+if(!h.els.get('choices').children.some(b=>b.textContent.includes('STEP INSIDE'))){settle();clickText('EXPLORE AREA');}
+clickText('STEP INSIDE');
+for(let i=0;i<6;i++){h.run('saveGame();loadGame()');h.els.get('choices').children[0].click();}
+assert.equal(h.run('game.story.report.key'),'loop');assert(h.els.get('narrative').textContent.includes('Your boots are wet.'));assert(h.els.get('narrative').textContent.includes('12:47 AM'));
+console.log('PASS: connected Gainesville-to-Station-17 journey, all clues and middle beats, saved finale stages, and wet-boots loop.');
