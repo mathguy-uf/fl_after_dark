@@ -241,6 +241,7 @@ function travelTo(key) {
   if (!game.player.visitedLocations.includes(key)) game.player.visitedLocations.push(key);
   discoverConnections(key); maybeChangeWeather(); updateHUD();
   if (game.player.fuel <= 0) return endGame("fuel");
+  if (maybePassingCar()) return;
 
   showNarrative(`You drive ${miles} miles to ${dest.name}.\n\n${dest.description}`);
   game.scene={kind:"location"}; showChoices([]);
@@ -417,13 +418,17 @@ function loadGame() {
     if (s.version !== 1 || !s.player || !locations[s.player.location]) throw Error("Invalid save");
     if (s.story && (!Array.isArray(s.story.evidence) || !Array.isArray(s.story.actionLog) || !s.story.flags || typeof s.story.flags !== "object")) throw Error("Invalid story");
     if(s.story?.decisions && Object.values(s.story.decisions).some(v=>v!==0&&v!==1)) throw Error("Invalid decisions");
-    if(s.scene && !["opening","location","function","decision","result","event"].includes(s.scene.kind)) throw Error("Invalid scene");
+    if(s.scene && !["opening","location","function","decision","result","event","passingCar"].includes(s.scene.kind)) throw Error("Invalid scene");
     if(s.scene?.kind==="decision" && !decisionMoments.some(m=>m.id===s.scene.id)) throw Error("Invalid decision scene");
     if(s.scene?.kind==="function" && !Object.hasOwn(sceneFunctions,s.scene.name)) throw Error("Invalid function scene");
     if(s.story?.nightStats && (!Array.isArray(s.story.nightStats.strange)||!Array.isArray(s.story.nightStats.floridaMen))) throw Error("Invalid night statistics");
     if(s.story?.report){
       const r=s.story.report;
       if(!Object.hasOwn(NIGHT_ENDINGS,r.key)||!["epilogue","summary"].includes(r.stage)||![r.miles,r.locations,r.total,r.strange,r.floridaMen].every(n=>Number.isInteger(n)&&n>=0)) throw Error("Invalid night report");
+    }
+    if(s.story?.passingCar){
+      const r=s.story.passingCar;
+      if(typeof r.eligible!=="boolean"||!["waiting","approach","passed","done"].includes(r.phase)||(r.phase==="passed"&&typeof r.radioTime!=="string")) throw Error("Invalid road scene");
     }
     const player = normalizePlayer(s.player);
     cancelTravel(); closeAllOverlays();

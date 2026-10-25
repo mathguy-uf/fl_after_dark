@@ -61,3 +61,58 @@ function restoreScene(){
  if(s.kind==='event'){const e=events.find(e=>e.id===s.id)||storyFinalEvent;showNarrative(e.text);return showChoices(e.choices.map(c=>({label:c.label,action:()=>resolveChoice(c)})));}
  showLocationScene();
 }
+
+// Separate deterministic draw: normal encounters never consume this opportunity.
+// The seed generator has 9,000 equiprobable values; this permutation selects 90.
+function passingCarEligible(seed) {
+  const n=((Math.trunc(seed)-1000)%9000+9000)%9000;
+  return ((n*7919+4171)%9000)<90;
+}
+function passingCarState() {
+  return ensureStoryState().passingCar ||= {eligible:passingCarEligible(game.seed),phase:"waiting"};
+}
+function maybePassingCar() {
+  if(!game.inProgress||!game.story?.flags.driveStarted||game.story.finalizing)return false;
+  const s=passingCarState();
+  if(s.phase!=="waiting")return false;
+  if(!s.eligible){s.phase="done";return false;}
+  s.phase="approach";
+  renderPassingCar();return true;
+}
+function leavePassingCar() {
+  passingCarState().phase="done";
+  game.scene={kind:"location"};
+  showLocationScene();
+}
+function renderPassingCar() {
+  const s=passingCarState();
+  game.scene={kind:"passingCar"};
+  if(s.phase==="approach"){
+    showNarrative("Headlights appear in your mirror.\n\nThey stay behind you through two bends. There is room on the shoulder.");
+    showChoices([
+      {label:"PULL OVER",action:()=>{
+        s.phase="passed";
+        s.radioTime=formatTime(game.player.time+17);
+        renderPassingCar();
+      }},
+      {label:"KEEP DRIVING",action:leavePassingCar}
+    ]);
+    return;
+  }
+  if(s.phase==="passed"){
+    showNarrative("You ease onto the shoulder.\n\nThe car passes slowly.\n\nSame color. Same dent above the rear wheel.\n\nSame plate.\n\nFor a moment, the dashboard light catches the driver's face.\n\nYour face.\n\nYou are looking straight ahead.\n\nThe radio says, '"+s.radioTime+".'\n\nThe taillights disappear around the bend.");
+    showChoices([{label:"CONTINUE",action:leavePassingCar}]);
+    return;
+  }
+  leavePassingCar();
+}
+const passingCarRestoreScene=restoreScene;
+restoreScene=function(){
+  if(game.inProgress&&game.scene?.kind==="passingCar")return renderPassingCar();
+  return passingCarRestoreScene();
+};
+const passingCarChooseAside=chooseAside;
+chooseAside=function(text){
+  if(game.scene?.kind==="passingCar")return "";
+  return passingCarChooseAside(text);
+};

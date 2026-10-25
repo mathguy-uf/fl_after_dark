@@ -45,3 +45,33 @@ for(const [key,d] of routes){
 for(const key of ['home','fuel']){h=harness();h.run('endGame('+JSON.stringify(key)+');showNightReport();saveGame();loadGame()');assert.equal(h.run('game.story.report.key'),key);assert.equal(h.els.get('postgame-screen').hidden,false);}
 h=harness();h.run('showDecision("coin");showDecision("coin");finaleMonitor();saveGame();loadGame()');assert.equal(h.run('nightStats().floridaMen.length'),2);
 console.log('PASS: all 128 decision combinations, four complete finale paths, both early endings, report values, report reload, encounter deduplication, and Drive Again reset.');
+
+// One seed-level opportunity; repeated travel is not another lottery ticket.
+h=harness();
+const selected=h.run('Array.from({length:9000},(_,i)=>i+1000).filter(passingCarEligible)');
+assert.equal(selected.length,90);
+const selectedSeed=selected[0];
+const rejectedSeed=h.run('Array.from({length:9000},(_,i)=>i+1000).find(s=>!passingCarEligible(s))');
+h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();saveGame();loadGame();travelTo("citrusStand")');
+assert.equal(h.run('game.scene.kind'),'passingCar');
+assert.equal(h.run('game.story.passingCar.phase'),'approach');
+assert.equal(h.timers.filter(t=>t.ms===350).length,0);
+h.run('saveGame();loadGame()');assert.equal(h.run('game.story.passingCar.phase'),'approach');
+h.run('game.player.time=1435'); // 11:55 PM -> 12:12 AM, without moving the game clock.
+const clock=h.run('game.player.time');
+const beforePass=h.run('JSON.stringify({fuel:game.player.fuel,inventory:game.player.inventory,decisions:decisions(),stats:nightStats(),history:game.eventHistory,ending:selectNightEnding()})');
+h.els.get('choices').children[0].click();
+assert(h.els.get('narrative').textContent.includes('12:12 AM'));assert(h.els.get('narrative').textContent.includes('Your face.'));
+assert.equal(h.run('game.player.time'),clock);assert.equal(h.run('chooseAside(document.getElementById("narrative").textContent)'),"");
+assert.equal(h.run('JSON.stringify({fuel:game.player.fuel,inventory:game.player.inventory,decisions:decisions(),stats:nightStats(),history:game.eventHistory,ending:selectNightEnding()})'),beforePass);
+h.run('saveGame();loadGame()');assert(h.els.get('narrative').textContent.includes('12:12 AM'));
+h.els.get('choices').children[0].click();assert.equal(h.run('game.story.passingCar.phase'),'done');
+h.run('saveGame();loadGame()');for(let i=0;i<100;i++)assert.equal(h.run('maybePassingCar()'),false);
+// Refusing the shoulder consumes the sole opportunity, too.
+h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();travelTo("citrusStand")');h.els.get('choices').children[1].click();assert.equal(h.run('maybePassingCar()'),false);
+// Ineligible nights remain ineligible over repeated checks and reloads.
+h=harness();h.run('game.seed='+rejectedSeed+';beginNight();beginTheDrive()');for(let i=0;i<100;i++)assert.equal(h.run('maybePassingCar()'),false);h.run('saveGame();loadGame()');assert.equal(h.run('maybePassingCar()'),false);
+// Ending takes precedence over the sighting; a fresh run resets the opportunity.
+h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.player.fuel=1;travelTo("citrusStand")');assert.equal(h.run('game.story.report.key'),'fuel');
+h.run('beginNight();beginTheDrive();travelTo("citrusStand")');assert.equal(h.run('game.story.passingCar.phase'),'approach');
+console.log('PASS: 90/9000 eligible seeds; single opportunity; both choices; all save phases; midnight time; no gameplay/report changes or humor aside; fuel priority and reset.');
