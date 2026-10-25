@@ -132,7 +132,11 @@ if (typeof chooseAside === "function") {
   const baseStoryChooseAside = chooseAside;
   chooseAside = function storyAwareAside(text) {
     const s = ensureStoryState();
-    if (s.finalizing || /MEET ME AT STATION 17|BRING MY BUCKET|SECURITY MONITOR|INCIDENT ARCHIVE|ENDING:/i.test(text)) return "";
+    if (
+      s.finalizing ||
+      !s.flags.driveStarted ||
+      /MEET ME AT STATION 17|BRING MY BUCKET|SECURITY MONITOR|INCIDENT ARCHIVE|ENDING:|letter sits in the glove box|handwriting is yours/i.test(text)
+    ) return "";
     return baseStoryChooseAside(text);
   };
 }
@@ -299,11 +303,9 @@ loadGame = function storyLoadGame() {
     const parsed = raw ? JSON.parse(raw) : null;
     if (parsed?.story) savedStory = parsed.story;
   } catch {}
+  game.story = savedStory || freshStoryState();
   baseStoryLoadGame();
-  if (game.inProgress) {
-    game.story = savedStory || freshStoryState();
-    ensureStoryState();
-  }
+  if (game.inProgress) ensureStoryState();
 };
 
 // --- End ---------------------------------------------------------------------
