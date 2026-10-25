@@ -5,6 +5,16 @@ for(const name of Object.keys(sceneFunctions)){
  const original=sceneFunctions[name];
  window[name]=function(...args){game.scene={kind:'function',name};return original(...args);};
 }
+// The core clue system knows when all three route objects exist, but the story
+// deliberately withholds Station 17's name until the Everglades reveal. Keep the
+// early status useful without letting a mechanical unlock spoil Act III.
+const consequenceSetStatus=setStatus;
+setStatus=function(text){
+ if(text==="ROUTE DISCOVERED: STATION 17. Reach it from Everglades Road."&&game.story&&!game.story.flags?.routeRevelation){
+  return consequenceSetStatus("THREE ROUTE MARKERS COLLECTED. The final road is still missing.");
+ }
+ return consequenceSetStatus(text);
+};
 const decisionMoments=[
  {id:'help',location:'suwanneeRiver',text:'A driver waves beside a stalled pickup. She needs a jump. The road behind you is empty.',options:[['STOP AND HELP','You wait while her engine catches. She writes your plate number on her palm. “If you need help, I will remember.”',8],['KEEP DRIVING','Her hazard lights shrink in the mirror. You tell yourself somebody else will stop.',0]],echo:['The woman from the pickup has left a fuel can beside the Space Coast pump. Your plate number is written on it. You gain 18 fuel.','At the Space Coast pump, the same pickup passes on a tow truck. Its driver looks through you.'],later:'spaceCoast'},
  {id:'phone',location:'citrusStand',text:'The payphone rings. On its cracked display: YOUR NUMBER. Answering feels like agreeing to something.',options:[['ANSWER','Your voice says: “When the motel television starts counting, unplug it.”',3],['LET IT RING','The ringing stops. A message indicator blinks, although this phone has no answering machine.',0]],echo:['You unplug the motel television before it counts down. A key falls from behind it. You keep it.','The motel television counts down. At zero every door slams. You lose twelve minutes finding the exit.'],later:'abandonedMotel'},

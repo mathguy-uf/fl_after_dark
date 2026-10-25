@@ -40,6 +40,14 @@ function mapBackgroundColor() {
   return css.getPropertyValue("--bg").trim() || "#020602";
 }
 
+function mapLocationVisible(key, discovered) {
+  if (!discovered.has(key)) return false;
+  // Core clue collection can internally mark Station 17 as discovered before
+  // the story reveals its route. Keep it off the player-facing map until Act III.
+  if (key === "station17" && game.story && !game.story.flags?.routeRevelation) return false;
+  return true;
+}
+
 function plotLine(ctx, x1, y1, x2, y2, color, dash = false) {
   ctx.save();
   ctx.strokeStyle = color;
@@ -107,11 +115,11 @@ function drawRoadMap() {
   const drawnEdges = new Set();
 
   Object.entries(locations).forEach(([key, loc]) => {
-    if (!discovered.has(key)) return;
+    if (!mapLocationVisible(key, discovered)) return;
     const a = mapPoints[key];
     if (!a) return;
     loc.connections.forEach(neighbor => {
-      if (!discovered.has(neighbor) || !mapPoints[neighbor]) return;
+      if (!mapLocationVisible(neighbor, discovered) || !mapPoints[neighbor]) return;
       const edge = [key, neighbor].sort().join("|");
       if (drawnEdges.has(edge)) return;
       drawnEdges.add(edge);
@@ -120,8 +128,8 @@ function drawRoadMap() {
     });
   });
 
-  Object.entries(locations).forEach(([key, loc]) => {
-    if (!discovered.has(key) || !mapPoints[key]) return;
+  Object.entries(locations).forEach(([key]) => {
+    if (!mapLocationVisible(key, discovered) || !mapPoints[key]) return;
     const [x,y] = mapPoints[key];
     const current = game.player.location === key;
     ctx.fillStyle = current ? bright : dim;
@@ -141,7 +149,7 @@ function drawRoadMap() {
     ["spaceCoast","SPACE COAST",198,99], ["evergladesRoad","EVERGLADES",188,137],
     ["keysCauseway","KEYS",133,178], ["station17","STN 17",212,151]
   ];
-  labels.forEach(([key,text,x,y]) => { if (discovered.has(key)) ctx.fillText(text,x,y); });
+  labels.forEach(([key,text,x,y]) => { if (mapLocationVisible(key, discovered)) ctx.fillText(text,x,y); });
 
   ctx.fillStyle = dim;
   ctx.fillText("* ROADS SHOWN ONLY AFTER DISCOVERY", 7, 188);
@@ -152,6 +160,7 @@ function renderAppleMap() {
   if (!map || !game || !game.player) return;
   map.replaceChildren();
 
+  const discovered = new Set(game.player.discoveredLocations || []);
   const frame = document.createElement("div");
   frame.className = "apple-map-frame";
   const canvas = document.createElement("canvas");
@@ -170,9 +179,10 @@ function renderAppleMap() {
   map.append(frame, legend);
   const list=document.createElement("ul"); list.className="route-list";
   for(const key of game.player.discoveredLocations){
+    if(!mapLocationVisible(key, discovered))continue;
     const loc=locations[key]; if(!loc)continue;
     const row=document.createElement("li");
-    row.textContent=loc.name+": "+loc.connections.filter(k=>game.player.discoveredLocations.includes(k)).map(k=>locations[k].name).join(" / ");
+    row.textContent=loc.name+": "+loc.connections.filter(k=>mapLocationVisible(k, discovered)).map(k=>locations[k].name).join(" / ");
     list.appendChild(row);
   }
   map.appendChild(list);
