@@ -18,8 +18,19 @@ h.run('finaleMonitor();saveGame();loadGame()');assert(h.els.get('choices').child
 for(const id of ['help','phone','coin','tape','warning','register','reserve'])for(const v of [0,1]){
  h=harness();h.run('beginTheDrive();game.player.inventory.push("strangeCoin","cassetteTape");showDecision('+JSON.stringify(id)+')');h.els.get('choices').children[v].click();h.run('saveGame();loadGame()');assert.equal(h.run('decisions()['+JSON.stringify(id)+']'),v);h.run('game.player.location=decisionMoments.find(m=>m.id==='+JSON.stringify(id)+').later;for(let step=0;step<6;step++)showLocationActions()');assert(h.run('game.story.callbacks['+JSON.stringify(id)+']'));if(id==='coin')assert(h.run('hasItem("strangeCoin")'));
 }
+// Dismissing a deterministic story beat must re-enter the current layered
+// renderer, so later decisions appear and save/load does not replay the beat.
+h=harness();h.run('beginTheDrive();game.player.location="spaceCoast";game.story.evidence=["pier"];gatorHeadline()');
+h.els.get('choices').children[1].click();assert.equal(h.run('game.scene.kind'),'decision');assert.equal(h.run('game.scene.id'),'warning');
+h.run('saveGame();loadGame()');assert.equal(h.run('game.scene.kind'),'decision');assert.equal(h.run('game.scene.id'),'warning');assert(!h.els.get('narrative').textContent.includes('ARCHIVE REPORT'));
+// Possessing all three route items is not enough to jump from the motel to Act III.
+h=harness();h.run('beginTheDrive();game.player.discoveredLocations.push("station17");game.story.evidence=["pier","motel"];game.story.flags.pierRecognition=true;game.story.flags.motelRegister=true;game.player.location="abandonedMotel";game.scene={kind:"location"}');
+assert.equal(h.run('maybeStoryInterlude()'),false);assert.equal(h.run('!!game.story.flags.routeRevelation'),false);
+h.run('game.player.location="spaceCoast";game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.gatorHeadline'));
+h.run('game.player.location="evergladesRoad";game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.roadEcho'));assert.equal(h.run('!!game.story.flags.routeRevelation'),false);
+h.run('game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.routeRevelation'));assert.equal(h.run('game.story.act'),3);
 for(const p of fs.readdirSync(root).filter(p=>p.endsWith('.js')))new vm.Script(fs.readFileSync(root+p,'utf8'),{filename:p});
-console.log('PASS: opening/finale restore, failed load preserves progress, unified finale, all 14 decision branches persist and trigger callbacks, coin clue retained, all scripts parse.');
+console.log('PASS: opening/finale restore, failed load preserves progress, story exits restore current layers, Act III pacing, all 14 decision branches, coin clue retained, all scripts parse.');
 
 const reached=new Set();
 for(let bits=0;bits<128;bits++){
@@ -52,7 +63,11 @@ const selected=h.run('Array.from({length:9000},(_,i)=>i+1000).filter(passingCarE
 assert.equal(selected.length,90);
 const selectedSeed=selected[0];
 const rejectedSeed=h.run('Array.from({length:9000},(_,i)=>i+1000).find(s=>!passingCarEligible(s))');
-h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();saveGame();loadGame();travelTo("citrusStand")');
+// Even an eligible seed cannot expose the doppelgänger during Act I.
+h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();travelTo("citrusStand")');
+assert.notEqual(h.run('game.scene.kind'),'passingCar');assert.equal(h.run('game.story.passingCar'),undefined);
+// Once two middle-act echoes exist, the same seed gets its single opportunity.
+h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.story.act=2;game.story.evidence=["pier","motel"];saveGame();loadGame();travelTo("citrusStand")');
 assert.equal(h.run('game.scene.kind'),'passingCar');
 assert.equal(h.run('game.story.passingCar.phase'),'approach');
 assert.equal(h.timers.filter(t=>t.ms===350).length,0);
@@ -68,13 +83,13 @@ h.run('saveGame();loadGame()');assert(h.els.get('narrative').textContent.include
 h.els.get('choices').children[0].click();assert.equal(h.run('game.story.passingCar.phase'),'done');
 h.run('saveGame();loadGame()');for(let i=0;i<100;i++)assert.equal(h.run('maybePassingCar()'),false);
 // Refusing the shoulder consumes the sole opportunity, too.
-h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();travelTo("citrusStand")');h.els.get('choices').children[1].click();assert.equal(h.run('maybePassingCar()'),false);
-// Ineligible nights remain ineligible over repeated checks and reloads.
-h=harness();h.run('game.seed='+rejectedSeed+';beginNight();beginTheDrive()');for(let i=0;i<100;i++)assert.equal(h.run('maybePassingCar()'),false);h.run('saveGame();loadGame()');assert.equal(h.run('maybePassingCar()'),false);
+h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.story.act=2;game.story.evidence=["pier","motel"];travelTo("citrusStand")');h.els.get('choices').children[1].click();assert.equal(h.run('maybePassingCar()'),false);
+// Ineligible nights remain ineligible once the middle-act opportunity opens.
+h=harness();h.run('game.seed='+rejectedSeed+';beginNight();beginTheDrive();game.story.act=2;game.story.evidence=["pier","motel"]');for(let i=0;i<100;i++)assert.equal(h.run('maybePassingCar()'),false);h.run('saveGame();loadGame()');assert.equal(h.run('maybePassingCar()'),false);
 // Ending takes precedence over the sighting; a fresh run resets the opportunity.
-h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.player.fuel=1;travelTo("citrusStand")');assert.equal(h.run('game.story.report.key'),'fuel');
-h.run('beginNight();beginTheDrive();travelTo("citrusStand")');assert.equal(h.run('game.story.passingCar.phase'),'approach');
-console.log('PASS: 90/9000 eligible seeds; single opportunity; both choices; all save phases; midnight time; no gameplay/report changes or humor aside; fuel priority and reset.');
+h=harness();h.run('game.seed='+selectedSeed+';beginNight();beginTheDrive();game.story.act=2;game.story.evidence=["pier","motel"];game.player.fuel=1;travelTo("citrusStand")');assert.equal(h.run('game.story.report.key'),'fuel');
+h.run('beginNight();beginTheDrive();game.story.act=2;game.story.evidence=["pier","motel"];travelTo("citrusStand")');assert.equal(h.run('game.story.passingCar.phase'),'approach');
+console.log('PASS: 90/9000 eligible seeds; no Act-I spoiler; middle-act single opportunity; both choices; all save phases; midnight time; no gameplay/report changes or humor aside; fuel priority and reset.');
 // A connected road journey, using rendered choices rather than assigning clues.
 h=harness();h.ready.forEach(fn=>fn());h.run('game.seed=1234;beginNight()');
 function clickText(fragment){const b=h.els.get('choices').children.find(b=>b.textContent.includes(fragment));assert(b,'Missing choice '+fragment);b.click();}
@@ -90,7 +105,7 @@ clickText('OPEN THE LETTER');clickText('TURN LETTER OVER');clickText('START SOUT
 drive('Roadside Citrus Stand');clickText('EXPLORE AREA');settle();assert(h.run('hasItem("coordinatesReceipt")'));
 drive('Cedar Key');drive('Old Fishing Pier');clickText('EXPLORE AREA');settle();assert(h.run('hasItem("strangeCoin")'));
 drive('Cedar Key');drive('Roadside Citrus Stand');drive('Abandoned Motel');
-clickText('EXPLORE AREA');settle();clickText('EXPLORE AREA');settle();assert(h.run('hasItem("cassetteTape")'));
+clickText('EXPLORE AREA');settle();clickText('EXPLORE AREA');settle();assert(h.run('hasItem("cassetteTape")'));assert.equal(h.run('!!game.story.flags.routeRevelation'),false);
 drive('Ocala National Forest');drive('Space Coast');drive('Everglades Road');
 assert(h.run('game.story.flags.pierRecognition&&game.story.flags.motelRegister&&game.story.flags.gatorHeadline&&game.story.flags.roadEcho&&game.story.flags.routeRevelation'));
 assert(h.run('game.player.discoveredLocations.includes("station17")'));
@@ -100,4 +115,4 @@ if(!h.els.get('choices').children.some(b=>b.textContent.includes('STEP INSIDE'))
 clickText('STEP INSIDE');
 for(let i=0;i<6;i++){h.run('saveGame();loadGame()');h.els.get('choices').children[0].click();}
 assert.equal(h.run('game.story.report.key'),'loop');assert(h.els.get('narrative').textContent.includes('Your boots are wet.'));assert(h.els.get('narrative').textContent.includes('12:47 AM'));
-console.log('PASS: connected Gainesville-to-Station-17 journey, all clues and middle beats, saved finale stages, and wet-boots loop.');
+console.log('PASS: connected Gainesville-to-Station-17 journey, ordered middle beats, all clues, saved finale stages, and wet-boots loop.');

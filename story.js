@@ -55,6 +55,14 @@ function storyActionSummary() {
   return rows.length ? rows.join("\n") : "• NO INCIDENTS RECORDED\n  (THIS IS OBVIOUSLY INCORRECT.)";
 }
 
+// Story exits must return through the current layered renderer, not the original
+// core renderer captured before consequences.js. This keeps callbacks, decisions,
+// and save/restore scene identifiers in sync after an interlude ends.
+function resumeRoad() {
+  game.scene = { kind: "location" };
+  return window.showLocationActions();
+}
+
 function openTheLetter() {
   const s = ensureStoryState();
   s.letterRead = true;
@@ -179,7 +187,7 @@ function pierRecognition() {
   );
   showChoices([{ label: "ASK WHAT ELSE I DID", action: () => {
     showResult("'Mostly argued with the alligator,' he says. 'Alligator had the stronger case.'\n\nThen he asks whether the redfish are running, as if the conversation is finished.");
-  }}, { label: "LEAVE THIS ALONE", action: baseStoryShowLocationActions }]);
+  }}, { label: "LEAVE THIS ALONE", action: resumeRoad }]);
   return true;
 }
 
@@ -198,7 +206,7 @@ function motelRegister() {
   );
   showChoices([{ label: "CHECK THE HANDWRITING", action: () => {
     showResult("It matches the letter.\n\nIt also matches yours.");
-  }}, { label: "BACK AWAY FROM THE REGISTER", action: baseStoryShowLocationActions }]);
+  }}, { label: "BACK AWAY FROM THE REGISTER", action: resumeRoad }]);
   return true;
 }
 
@@ -216,7 +224,7 @@ function gatorHeadline() {
   );
   showChoices([{ label: "CHECK MY PLATE", action: () => {
     showResult("You check twice.\n\nThe plate is correct.\n\nFrom the radio, very softly:\n\n'Seventeen.'");
-  }}, { label: "TURN OFF THE RADIO", action: baseStoryShowLocationActions }]);
+  }}, { label: "TURN OFF THE RADIO", action: resumeRoad }]);
   return true;
 }
 
@@ -236,7 +244,7 @@ function roadEcho() {
   );
   showChoices([{ label: "WHO IS SUBJECT?", action: () => {
     showResult("Static.\n\nThen a voice, almost familiar, answers:\n\n'Subject seventeen.'");
-  }}, { label: "KEEP DRIVING", action: baseStoryShowLocationActions }]);
+  }}, { label: "KEEP DRIVING", action: resumeRoad }]);
   return true;
 }
 
@@ -251,7 +259,7 @@ function routeRevelation() {
     "The handwriting matches the letter.\n\n" +
     "It matches yours."
   );
-  showChoices([{ label: "GO FIND STATION 17", action: baseStoryShowLocationActions }]);
+  showChoices([{ label: "GO FIND STATION 17", action: resumeRoad }]);
   setStatus("ACT III // ROUTE DISCOVERED: STATION 17.");
   return true;
 }
@@ -260,7 +268,6 @@ function maybeStoryInterlude() {
   const s = ensureStoryState();
   if (!game.inProgress || !game.player || s.finalizing ||
       game.scene?.serious ||
-      !game.inProgress ||
       game.scene?.kind === "function" ||
       game.scene?.kind === "decision" ||
       game.player?.location === "station17" || !s.flags.driveStarted) return false;
@@ -270,7 +277,9 @@ function maybeStoryInterlude() {
   if (key === "abandonedMotel" && !s.flags.motelRegister) return motelRegister();
   if (key === "spaceCoast" && !s.flags.gatorHeadline && s.evidence.length >= 1) return gatorHeadline();
   if (key === "evergladesRoad" && !s.flags.roadEcho && s.evidence.length >= 2) return roadEcho();
-  if (game.player.discoveredLocations.includes("station17") && !s.flags.routeRevelation) return routeRevelation();
+  if (key === "evergladesRoad" &&
+      game.player.discoveredLocations.includes("station17") &&
+      !s.flags.routeRevelation && s.flags.gatorHeadline && s.flags.roadEcho) return routeRevelation();
   return false;
 }
 
@@ -299,8 +308,6 @@ renderRadio = function storyRenderRadio() {
   }
 };
 
-// Preserve story state through the existing v1 save loader, which otherwise
-// restores only the original core fields.
 // --- End ---------------------------------------------------------------------
 const storyFinalEvent = {
   id: "story-station-door",

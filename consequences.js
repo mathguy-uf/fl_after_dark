@@ -74,6 +74,11 @@ function passingCarState() {
 }
 function maybePassingCar() {
   if(!game.inProgress||!game.story?.flags.driveStarted||game.story.finalizing)return false;
+  const story=ensureStoryState();
+  // The doppelgänger is a rare middle-act omen, not an opening-scene spoiler.
+  // Wait until at least two independent echoes have established the mystery, and
+  // never interrupt Station 17 or the final act.
+  if(story.act!==2||story.evidence.length<2||game.player.location==="station17")return false;
   const s=passingCarState();
   if(s.phase!=="waiting")return false;
   if(!s.eligible){s.phase="done";return false;}

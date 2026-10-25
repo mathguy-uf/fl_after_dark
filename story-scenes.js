@@ -128,6 +128,9 @@ renderScene = function renderStoryScene(text) {
   if (/security monitor|security tape|cam 17|timestamp is seventeen minutes ahead/.test(t)) kind = "monitor";
   if (/five-gallon bucket|bring my bucket|bucket beside the door/.test(t) && /wet|important documents/.test(t)) kind = "bucket";
   if (/ending: the other driver|12:47 am\.\s*gainesville/.test(t)) kind = "loop";
+  // The pier recognition scene mentions an alligator in dialogue; keep the art on
+  // the fisherman/pier instead of switching to an unrelated alligator close-up.
+  if (!kind && (/fisherman.*pier|pier.*fisherman/.test(t))) kind = "pier";
   if (!game.inProgress) kind=game.ending==="loop"?"loop":"road";
   if (!kind) return baseStorySceneRender(text);
 
@@ -136,12 +139,13 @@ renderScene = function renderStoryScene(text) {
   const { canvas, frame, ctx, c } = out;
   clearStoryScene(ctx, c);
   if (kind === "road") drawGenericRoad(ctx, c);
+  if (kind === "pier") drawLocation(ctx, "oldFishingPier", c);
   if (kind === "letter") drawStoryLetter(ctx, c);
   if (kind === "archive") drawStoryArchive(ctx, c);
   if (kind === "monitor") drawStoryMonitor(ctx, c);
   if (kind === "bucket") drawStoryBucket(ctx, c);
   if (kind === "loop") drawStoryLoop(ctx, c);
   frame.hidden = false;
-  canvas.setAttribute("aria-label", `Apple II-style pixel illustration of the ${kind} story scene.`);
+  const label = kind === "pier" ? "Old Fishing Pier recognition" : kind;
+  canvas.setAttribute("aria-label", `Apple II-style pixel illustration of the ${label} story scene.`);
 };
-
