@@ -84,7 +84,7 @@ function drawStoryMonitor(ctx, c) {
 
   ctx.fillStyle = c.bright;
   ctx.font = "8px monospace";
-  ctx.fillText("SUBJECT: YOU", 93, 118);
+  ctx.fillText(game.story?.finalizing ? "SUBJECT: YOU" : "SIGNAL UNSTABLE", 93, 118);
 }
 
 function drawStoryBucket(ctx, c) {
@@ -120,20 +120,22 @@ function drawStoryLoop(ctx, c) {
 
 const baseStorySceneRender = renderScene;
 renderScene = function renderStoryScene(text) {
-  if (!game.inProgress) return;
+  if (!game.inProgress && (!game.story?.report || game.story.report.stage!=="epilogue")) return;
   const t = String(text || "").toLowerCase();
   let kind = "";
   if (/envelope|handwriting is yours|meet me at station 17/.test(t) && !/incident archive/.test(t)) kind = "letter";
-  if (/incident archive|newspaper clippings|metal file drawer/.test(t)) kind = "archive";
+  if (/incident archive|tonight.s incident log|newspaper clippings|metal file drawer/.test(t)) kind = "archive";
   if (/security monitor|security tape|cam 17|timestamp is seventeen minutes ahead/.test(t)) kind = "monitor";
   if (/five-gallon bucket|bring my bucket|bucket beside the door/.test(t) && /wet|important documents/.test(t)) kind = "bucket";
   if (/ending: the other driver|12:47 am\.\s*gainesville/.test(t)) kind = "loop";
+  if (!game.inProgress) kind=game.ending==="loop"?"loop":"road";
   if (!kind) return baseStorySceneRender(text);
 
   const out = storySceneCanvas();
   if (!out) return;
   const { canvas, frame, ctx, c } = out;
   clearStoryScene(ctx, c);
+  if (kind === "road") drawGenericRoad(ctx, c);
   if (kind === "letter") drawStoryLetter(ctx, c);
   if (kind === "archive") drawStoryArchive(ctx, c);
   if (kind === "monitor") drawStoryMonitor(ctx, c);

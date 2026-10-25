@@ -242,6 +242,7 @@ function travelTo(key) {
   discoverConnections(key); maybeChangeWeather(); updateHUD();
   if (game.player.fuel <= 0) return endGame("fuel");
   if (maybePassingCar()) return;
+  if (maybeStoryInterlude()) return;
 
   showNarrative(`You drive ${miles} miles to ${dest.name}.\n\n${dest.description}`);
   game.scene={kind:"location"}; showChoices([]);
@@ -430,6 +431,12 @@ function loadGame() {
       const r=s.story.passingCar;
       if(typeof r.eligible!=="boolean"||!["waiting","approach","passed","done"].includes(r.phase)||(r.phase==="passed"&&typeof r.radioTime!=="string")) throw Error("Invalid road scene");
     }
+    if(s.story){
+      if(Array.isArray(s.story.flags)||typeof s.story.finalizing!=="boolean"||
+         s.story.actionLog.some(e=>!e||typeof e.choice!=="string"||!locations[e.location]||!Number.isFinite(e.time)))throw Error("Invalid story log");
+      for(const field of ["decisions","callbacks"]){if(s.story[field]&&(typeof s.story[field]!=="object"||Array.isArray(s.story[field])))throw Error("Invalid story flags");}
+    }
+    if(s.scene?.kind==="result"&&typeof s.scene.text!=="string")throw Error("Invalid scene text");
     const player = normalizePlayer(s.player);
     cancelTravel(); closeAllOverlays();
     Object.assign(game, {seed:Number(s.seed)||generateSeed(), rngState:Number(s.rngState)>>>0,

@@ -8,7 +8,7 @@ const NIGHT_ENDINGS = {
   },
   silence: {
     name: "DEAD AIR",
-    text: "You recognize the sound from the cassette: the relay closes just before your recorded voice begins. The phone call taught you what to do with a machine that counts down.\n\nYou pull the transmitter's power cable in the gap.\n\nYour crossed-out name disappears from the register. Every radio in the room falls silent. The letter is still blank on the other side.\n\nOutside, you hear frogs, trucks, somebody opening a gas station.\n\nNothing tells you what happens next. You have never been so relieved."
+    text: "You recognize the sound from the cassette: the relay closes just before your recorded voice begins. The phone call taught you what to do with a machine that counts down.\n\nYou pull the transmitter's power cable in the gap.\n\nYour crossed-out name disappears from the register. Every radio in the room falls silent. The letter stays on the desk. Nothing carries it back to Gainesville.\n\nOutside, you hear frogs, trucks, somebody opening a gas station.\n\nNothing tells you what happens next. You have never been so relieved."
   },
   borrowed: {
     name: "BORROWED TIME",
@@ -16,7 +16,7 @@ const NIGHT_ENDINGS = {
   },
   loop: {
     name: "THE OTHER DRIVER",
-    text: "The transmitter accepts your voice. There is no one outside to interrupt it, no silence between the words you can use, no coin buying you a way out.\n\nFor one second you hear every radio station at once.\n\nThen—\n\n12:47 AM. GAINESVILLE.\n\nThe gas station behind you goes dark. An envelope waits on the passenger seat. Your boots are wet.\n\nYou were never chasing Florida Man. You were leaving the stories behind you."
+    text: "The transmitter accepts your voice. There is no one outside to interrupt it, no silence between the words you can use, no coin buying you a way out.\n\nFor one second you hear every radio station at once.\n\nThen—\n\n12:47 AM. GAINESVILLE.\n\nThe gas station behind you goes dark. The road south is empty. You should probably go home. You don’t.\n\nAn envelope waits on the passenger seat.\n\nYour boots are wet.\n\nYou were never chasing Florida Man. You were leaving the stories behind you."
   },
   home: {name:"HOME BEFORE SUNRISE",text:"You turn toward Gainesville and keep driving until familiar streetlights replace the dark roads.\n\nAt home, the radio display glows 103.7 for one second after you remove the key.\n\nYou decide not to mention this to anyone before breakfast."},
   fuel: {name:"EMPTY",text:"The engine coughs once and the car rolls quietly to the shoulder.\n\nThe night becomes very large without the engine running.\n\nFar away, a radio tower blinks seventeen times."}

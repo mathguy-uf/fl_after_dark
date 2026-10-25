@@ -134,6 +134,11 @@ if (typeof chooseAside === "function") {
     const s = ensureStoryState();
     if (
       s.finalizing ||
+      game.scene?.serious ||
+      !game.inProgress ||
+      game.scene?.kind === "function" ||
+      game.scene?.kind === "decision" ||
+      game.player?.location === "station17" ||
       !s.flags.driveStarted ||
       /MEET ME AT STATION 17|BRING MY BUCKET|SECURITY MONITOR|INCIDENT ARCHIVE|ENDING:|letter sits in the glove box|handwriting is yours/i.test(text)
     ) return "";
@@ -173,8 +178,7 @@ function pierRecognition() {
     "'Okay.'"
   );
   showChoices([{ label: "ASK WHAT ELSE I DID", action: () => {
-    showNarrative("'Mostly argued with the alligator,' he says. 'Alligator had the stronger case.'\n\nThen he asks whether the redfish are running, as if the conversation is finished.");
-    showChoices([{ label: "CONTINUE", action: baseStoryShowLocationActions }]);
+    showResult("'Mostly argued with the alligator,' he says. 'Alligator had the stronger case.'\n\nThen he asks whether the redfish are running, as if the conversation is finished.");
   }}, { label: "LEAVE THIS ALONE", action: baseStoryShowLocationActions }]);
   return true;
 }
@@ -193,8 +197,7 @@ function motelRegister() {
     "You are suddenly less certain that this is the first time you have said that sentence."
   );
   showChoices([{ label: "CHECK THE HANDWRITING", action: () => {
-    showNarrative("It matches the letter.\n\nIt also matches yours.");
-    showChoices([{ label: "CONTINUE", action: baseStoryShowLocationActions }]);
+    showResult("It matches the letter.\n\nIt also matches yours.");
   }}, { label: "BACK AWAY FROM THE REGISTER", action: baseStoryShowLocationActions }]);
   return true;
 }
@@ -203,17 +206,16 @@ function gatorHeadline() {
   const s = ensureStoryState(); s.flags.gatorHeadline = true; s.act = Math.max(s.act, 2); rememberEvidence("gatorHeadline");
   showNarrative(
     "Every radio station cuts to the same local-news recording.\n\n" +
-    "ARCHIVE REPORT — 2015\n\n" +
+    "ARCHIVE REPORT — DATE UNREADABLE\n\n" +
     "A man drove up to a fast-food window and an alligator went through the open drive-through window.\n\n" +
     "The announcer calls it one of the strangest Florida stories ever recorded.\n\n" +
     "Then the recording describes the vehicle.\n\n" +
     "Same make. Same color. Same license plate.\n\n" +
     "Your license plate.\n\n" +
-    "The report is eleven years old."
+    "The recording is older than your car."
   );
   showChoices([{ label: "CHECK MY PLATE", action: () => {
-    showNarrative("You check twice.\n\nThe plate is correct.\n\nFrom the radio, very softly:\n\n'Seventeen.'");
-    showChoices([{ label: "CONTINUE", action: baseStoryShowLocationActions }]);
+    showResult("You check twice.\n\nThe plate is correct.\n\nFrom the radio, very softly:\n\n'Seventeen.'");
   }}, { label: "TURN OFF THE RADIO", action: baseStoryShowLocationActions }]);
   return true;
 }
@@ -233,8 +235,7 @@ function roadEcho() {
     "'SUBJECT CONTINUES SOUTH.'"
   );
   showChoices([{ label: "WHO IS SUBJECT?", action: () => {
-    showNarrative("Static.\n\nThen your own voice answers:\n\n'Florida Man.'");
-    showChoices([{ label: "CONTINUE", action: baseStoryShowLocationActions }]);
+    showResult("Static.\n\nThen a voice, almost familiar, answers:\n\n'Subject seventeen.'");
   }}, { label: "KEEP DRIVING", action: baseStoryShowLocationActions }]);
   return true;
 }
@@ -257,7 +258,12 @@ function routeRevelation() {
 
 function maybeStoryInterlude() {
   const s = ensureStoryState();
-  if (!game.inProgress || !game.player || s.finalizing || !s.flags.driveStarted) return false;
+  if (!game.inProgress || !game.player || s.finalizing ||
+      game.scene?.serious ||
+      !game.inProgress ||
+      game.scene?.kind === "function" ||
+      game.scene?.kind === "decision" ||
+      game.player?.location === "station17" || !s.flags.driveStarted) return false;
   const key = game.player.location;
 
   if (key === "oldFishingPier" && !s.flags.pierRecognition) return pierRecognition();
@@ -289,7 +295,7 @@ renderRadio = function storyRenderRadio() {
     if (last) text.textContent = `A voice reads: '${last.choice}. ${locations[last.location]?.name || "UNKNOWN"}. ${formatTime(last.time)}.' Then: 'SUBJECT CONTINUES SOUTH.'`;
   }
   if (station.frequency === "103.7 FM" && s.act >= 3) {
-    text.textContent = "Three tones. Your own voice says: 'Station 17 is receiving. Bring the letter. Bring the bucket.' You still do not own a bucket.";
+    text.textContent = "Three tones. A familiar voice says: 'Station 17 is receiving. Bring the letter. Bring the bucket.' You still do not own a bucket.";
   }
 };
 
@@ -324,7 +330,7 @@ function finaleArchive() {
     "• MAN TRIES TO KEEP 12-FOOT ALLIGATOR AS PET\n" +
     "• MAN CALLS 911 ASKING FOR RIDE HOME\n" +
     "• MAN PRETENDS TO BE PROSECUTOR TO CLEAR HIS OWN CASE\n\n" +
-    "Different names. Different dates.\n\n" +
+    "Names cut away. Dates overwritten. The same impossible details in every clipping.\n\n" +
     "The photographs are grainy.\n\n" +
     "The face is yours."
   );
@@ -363,12 +369,12 @@ function finaleMonitor() {
 function finaleLetter() {
   showNarrative(
     "The letter is blank.\n\n" +
-    "A typewriter waits beside it.\n\n" +
-    "One sheet of paper is already loaded.\n\n" +
-    "The first line has been typed for you:\n\n" +
+    "A pen waits beside it.\n\n" +
+    "A fresh sheet lies beneath the envelope.\n\n" +
+    "You write the first line before you realize what your hand is doing:\n\n" +
     "MEET ME AT STATION 17."
   );
-  showChoices([{ label: "TYPE THE REST", action: finaleTypeLetter }]);
+  showChoices([{ label: "WRITE THE REST", action: finaleTypeLetter }]);
 }
 
 function finaleTypeLetter() {
@@ -386,7 +392,7 @@ function finaleTypeLetter() {
 
 function finaleBucket() {
   showNarrative(
-    "On the back you type:\n\n" +
+    "On the back you write:\n\n" +
     "BRING MY BUCKET.\n\n" +
     "Behind you, something plastic scrapes across the floor.\n\n" +
     "There is now a five-gallon bucket beside the door.\n\n" +
