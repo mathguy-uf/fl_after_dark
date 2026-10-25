@@ -33,7 +33,7 @@ Everything is button-driven, so the game works well with a mouse, keyboard, or p
 - Eight text-only radio frequencies with several unusual signals.
 - A simple discovery map and tiny inventory system.
 - Light fuel/time management without survival-game bookkeeping.
-- Three endings: uncover the Florida Man loop, go home, or run out of fuel.
+- Four decision-dependent Station 17 endings, plus going home and running out of fuel.
 - Seeded pseudo-random encounter selection.
 - Local browser saving.
 - Responsive mobile layout.
@@ -55,6 +55,7 @@ fl_after_dark/
 ├── story.js
 ├── story-scenes.js
 ├── consequences.js
+├── endings.js
 ├── README.md
 └── assets/
 ```
@@ -96,6 +97,7 @@ fl_after_dark/
 ├── story.js        # Three-act mystery
 ├── story-scenes.js # Story illustrations
 ├── consequences.js # Remembered decisions and scene restoration
+├── endings.js      # Branching conclusions and night report
 ├── README.md       # This file
 └── assets/         # Reserved for optional screenshots or future local assets
 ```
@@ -110,4 +112,25 @@ The game text and visual design are original to this project and use no external
 ## Story and release notes
 Seven one-time decisions are remembered across saves: roadside help, the phone, the coin, the cassette, warning a family, the motel register, and emergency fuel. Later scenes change supplies, delays, evidence, and the final archive. Giving away the coin preserves its coordinates.
 
-Runtime scripts load in order: game.js, map.js, scenes.js, humor.js, story.js, story-scenes.js, consequences.js. Include all seven when copying or deploying. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
+Runtime scripts load in order: game.js, map.js, scenes.js, humor.js, story.js, story-scenes.js, consequences.js, endings.js. Include all eight when copying or deploying. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
+
+## Night complete
+After each ending, choose **End Night** to see a compact terminal report: miles driven, locations found out of 14, strange events, Florida Men encountered, and the ending name. **Drive Again** starts a fresh seeded night immediately. There are no scores, badges, or unlock requirements.
+
+Locations found counts places actually visited, not nearby roads marked on the map. Strange events counts distinct strange encounters and story scenes; repeating or reloading the same encounter does not inflate it. Florida Men counts the pier reflection and security-monitor sighting, not references in dialogue. Reports retain their ending and counts when saved and restored. Older saves without counters begin recording encounters from this update onward; their historical miles and visited places remain intact.
+
+<details>
+<summary>Ending logic — spoilers</summary>
+
+The Station 17 identity reveal always happens first. The first matching route below determines the conclusion, with no random ending roll:
+
+1. **Morning Traffic:** cross out your name, warn the family, and either help the stranded driver or leave the emergency reserve. People you protected interrupt the loop.
+2. **Dead Air:** cross out your name, answer the phone, and play the cassette. You recognize the relay's timing and interrupt the transmission.
+3. **Borrowed Time:** give away the coin. Your other self buys your escape, but remains behind.
+4. **The Other Driver:** otherwise, the loop completes.
+
+Going home (**Home Before Sunrise**) or exhausting fuel (**Empty**) ends the night early. Missing decisions do not count as selecting either option.
+</details>
+
+## Regression checks
+Run `node tests/endings.test.cjs`. This dependency-free JavaScript/DOM-stub harness checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, and replay resets. It is not a substitute for browser rendering or VoiceOver testing.

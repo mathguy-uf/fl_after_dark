@@ -420,6 +420,11 @@ function loadGame() {
     if(s.scene && !["opening","location","function","decision","result","event"].includes(s.scene.kind)) throw Error("Invalid scene");
     if(s.scene?.kind==="decision" && !decisionMoments.some(m=>m.id===s.scene.id)) throw Error("Invalid decision scene");
     if(s.scene?.kind==="function" && !Object.hasOwn(sceneFunctions,s.scene.name)) throw Error("Invalid function scene");
+    if(s.story?.nightStats && (!Array.isArray(s.story.nightStats.strange)||!Array.isArray(s.story.nightStats.floridaMen))) throw Error("Invalid night statistics");
+    if(s.story?.report){
+      const r=s.story.report;
+      if(!Object.hasOwn(NIGHT_ENDINGS,r.key)||!["epilogue","summary"].includes(r.stage)||![r.miles,r.locations,r.total,r.strange,r.floridaMen].every(n=>Number.isInteger(n)&&n>=0)) throw Error("Invalid night report");
+    }
     const player = normalizePlayer(s.player);
     cancelTravel(); closeAllOverlays();
     Object.assign(game, {seed:Number(s.seed)||generateSeed(), rngState:Number(s.rngState)>>>0,

@@ -11,3 +11,9 @@ body.theme-gameboy { --bg:#151b13; --panel:rgba(31,42,28,.93); --text:#b8c79b; -
 @media(max-width:700px){body{font-size:15px}.crt-shell{width:100%;margin:0;min-height:100vh;border-left:0;border-right:0}.site-header{align-items:flex-start}.site-header .icon-button{font-size:.78rem}.hud-grid{grid-template-columns:1fr 1fr}.button-grid{grid-template-columns:1fr}.narrative-panel{min-height:190px}.overlay{padding:.45rem}.wide-card{padding:.65rem}}@media(max-width:430px){.hud-grid{grid-template-columns:1fr}.site-footer{display:block}.site-footer span{display:block}.apple-map-legend{font-size:.62rem}.scene-frame{padding:.2rem}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 
 [hidden]{display:none!important}.route-list{font-size:1rem;line-height:1.6}.overlay-card{max-height:90dvh}.narrative:focus{outline:1px dotted var(--muted);outline-offset:4px}
+
+.postgame-screen{max-width:640px;margin:2rem auto;padding:clamp(1rem,4vw,2rem)}
+.postgame-screen h2{font-size:1.2rem;letter-spacing:.08em;margin:0 0 1.5rem}
+.night-report{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.6rem 1rem;margin:0 0 2rem;font-size:clamp(.75rem,2.7vw,1rem)}
+.night-report dt{overflow-wrap:anywhere}.night-report dd{margin:0;text-align:right;color:var(--bright);max-width:16ch;overflow-wrap:anywhere}
+.postgame-screen button{width:100%;text-align:center}

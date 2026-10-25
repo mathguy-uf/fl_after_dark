@@ -120,6 +120,7 @@ function drawStoryLoop(ctx, c) {
 
 const baseStorySceneRender = renderScene;
 renderScene = function renderStoryScene(text) {
+  if (!game.inProgress) return;
   const t = String(text || "").toLowerCase();
   let kind = "";
   if (/envelope|handwriting is yours|meet me at station 17/.test(t) && !/incident archive/.test(t)) kind = "letter";
@@ -141,3 +142,4 @@ renderScene = function renderStoryScene(text) {
   frame.hidden = false;
   canvas.setAttribute("aria-label", `Apple II-style pixel illustration of the ${kind} story scene.`);
 };
+
