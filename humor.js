@@ -2,8 +2,8 @@
 
 // FLORIDA AFTER DARK — HUMOR LAYER
 // Keeps the core mystery intact while occasionally adding a dry Florida aside.
-// Also adds rare, deliberately over-the-top encounters with the legendary
-// roadside figure known only as FLORIDA MAN.
+// Florida Man is story evidence now; this file intentionally does not spawn a
+// separate roadside NPC that could undercut the central reveal.
 
 const floridaAsides = [
   { match: /alligator/i, line: "FLORIDA NOTE: The alligator has right of way. This is not a statute. It is simply how things work." },
@@ -81,4 +81,3 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!narrative) return;
   new MutationObserver(scheduleHumorCheck).observe(narrative, { childList: true, characterData: true, subtree: true });
 });
-

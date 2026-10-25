@@ -35,6 +35,11 @@ function dimPixelColor() {
   return css.getPropertyValue("--muted").trim() || "#42b953";
 }
 
+function mapBackgroundColor() {
+  const css = getComputedStyle(document.body);
+  return css.getPropertyValue("--bg").trim() || "#020602";
+}
+
 function plotLine(ctx, x1, y1, x2, y2, color, dash = false) {
   ctx.save();
   ctx.strokeStyle = color;
@@ -94,7 +99,7 @@ function drawRoadMap() {
   const dim = dimPixelColor();
   ctx.imageSmoothingEnabled = false;
   ctx.clearRect(0, 0, MAP_W, MAP_H);
-  ctx.fillStyle = "#010301";
+  ctx.fillStyle = mapBackgroundColor();
   ctx.fillRect(0, 0, MAP_W, MAP_H);
   drawFlorida(ctx, bright, dim);
 
@@ -177,4 +182,3 @@ function renderAppleMap() {
 // Replace the original card-grid renderer while keeping the game's existing
 // openMap() function and every MAP / VIEW MAP button wired to the same action.
 renderMap = renderAppleMap;
-

@@ -9,8 +9,6 @@ No installation, framework, account, API, or build step is required.
 
 **GitHub Pages:** https://mathguy-uf.github.io/fl_after_dark/
 
-> 📷 **Screenshot placeholder:** add `assets/screenshot.png` here later if you want a preview image in the README.
-
 ## Controls
 
 Everything is button-driven, so the game works well with a mouse, keyboard, or phone touchscreen.
@@ -26,19 +24,21 @@ Everything is button-driven, so the game works well with a mouse, keyboard, or p
 
 ## Features
 
+- A three-act Station 17 mystery whose archive reflects choices made during the current night.
 - 14 Florida-inspired locations, including hidden **Station 17**.
 - 30 ordinary and strange encounters.
+- Seven remembered decision moments with later consequences.
 - Florida wildlife: alligators, armadillos, raccoons, deer, manatees, pelicans, ibis, and anhingas.
 - Coastal fishing references including snook, tarpon, redfish, and grouper.
 - Eight text-only radio frequencies with several unusual signals.
-- A simple discovery map and tiny inventory system.
+- Apple II-style runtime-drawn scene art and a 280×192 discovery map.
 - Light fuel/time management without survival-game bookkeeping.
 - Four decision-dependent Station 17 endings, plus going home and running out of fuel.
 - Seeded pseudo-random encounter selection.
-- Local browser saving.
+- Local browser saving, including the current story scene.
 - Responsive mobile layout.
 - Keyboard-accessible controls and reduced-motion support.
-- No image assets required.
+- No image assets or external runtime dependencies required.
 
 ## Run Locally
 
@@ -57,6 +57,7 @@ fl_after_dark/
 ├── consequences.js
 ├── endings.js
 ├── README.md
+├── tests/
 └── assets/
 ```
 
@@ -90,16 +91,17 @@ The main game functions are intentionally straightforward: `travelTo()`, `trigge
 fl_after_dark/
 ├── index.html      # Page structure and overlays
 ├── style.css       # CRT themes, responsive layout, accessibility styles
-├── game.js         # World data, encounters, radio, state, save/load, endings
-├── map.js          # Pixel map and accessible routes
-├── scenes.js       # Procedural illustrations
-├── humor.js        # Occasional roadside asides
-├── story.js        # Three-act mystery
-├── story-scenes.js # Story illustrations
+├── game.js         # World data, encounters, radio, state, save/load, core endings
+├── map.js          # 280×192 pixel map and accessible route list
+├── scenes.js       # Procedural location/event illustrations
+├── humor.js        # Occasional roadside asides; no separate Florida Man NPC
+├── story.js        # Three-act mystery and Station 17 reveal
+├── story-scenes.js # Story-specific illustrations
 ├── consequences.js # Remembered decisions and scene restoration
 ├── endings.js      # Branching conclusions and night report
+├── tests/          # Dependency-free regression harness
 ├── README.md       # This file
-└── assets/         # Reserved for optional screenshots or future local assets
+└── assets/         # Reserved for optional local assets
 ```
 
 ## License
@@ -108,16 +110,19 @@ Released under the MIT License; see LICENSE.
 
 The game text and visual design are original to this project and use no external runtime dependencies.
 
-
 ## Story and release notes
+
 Seven one-time decisions are remembered across saves: roadside help, the phone, the coin, the cassette, warning a family, the motel register, and emergency fuel. Later scenes change supplies, delays, evidence, and the final archive. Giving away the coin preserves its coordinates.
+
+The three-act pacing is deliberate: collecting the three route items can reveal that Station 17 exists, but Act III does not begin until the Space Coast archive report and Everglades radio echo have occurred. The rare same-car doppelgänger scene is also restricted to the middle act so it cannot expose the central idea on the first road out of Gainesville.
 
 Runtime scripts load in order: game.js, map.js, scenes.js, humor.js, story.js, story-scenes.js, consequences.js, endings.js. Include all eight when copying or deploying. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
 
 ## Night complete
-After each ending, choose **End Night** to see a compact terminal report: miles driven, locations found out of 14, strange events, Florida Men encountered, and the ending name. **Drive Again** starts a fresh seeded night immediately. There are no scores, badges, or unlock requirements.
 
-Locations found counts places actually visited, not nearby roads marked on the map. Strange events counts distinct strange encounters and story scenes; repeating or reloading the same encounter does not inflate it. Florida Men counts the pier reflection and security-monitor sighting, not references in dialogue. Reports retain their ending and counts when saved and restored. Older saves without counters begin recording encounters from this update onward; their historical miles and visited places remain intact.
+After each ending, choose **End Night** to see a compact terminal report: miles driven, locations found out of 14, strange events, Florida Man echoes, and the ending name. **Drive Again** starts a fresh seeded night immediately. There are no scores, badges, or unlock requirements.
+
+Locations found counts places actually visited, not nearby roads marked on the map. Strange events counts distinct strange encounters and story scenes; repeating or reloading the same encounter does not inflate it. Florida Man echoes count the pier reflection and security-monitor sighting, not references in dialogue. Reports retain their ending and counts when saved and restored. Older saves without counters begin recording encounters from this update onward; their historical miles and visited places remain intact.
 
 <details>
 <summary>Ending logic — spoilers</summary>
@@ -133,4 +138,5 @@ Going home (**Home Before Sunrise**) or exhausting fuel (**Empty**) ends the nig
 </details>
 
 ## Regression checks
-Run `node tests/endings.test.cjs`. This dependency-free JavaScript/DOM-stub harness checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, and replay resets. It is not a substitute for browser rendering or VoiceOver testing.
+
+Run `node tests/endings.test.cjs`. This dependency-free JavaScript/DOM-stub harness checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, interlude save/restore behavior, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
