@@ -163,6 +163,14 @@ function renderAppleMap() {
   legend.innerHTML = `<span>□ CURRENT: ${locations[game.player.location].name}</span><span>■ DISCOVERED</span><span>··· UNKNOWN ROADS OMITTED</span>`;
 
   map.append(frame, legend);
+  const list=document.createElement("ul"); list.className="route-list";
+  for(const key of game.player.discoveredLocations){
+    const loc=locations[key]; if(!loc)continue;
+    const row=document.createElement("li");
+    row.textContent=loc.name+": "+loc.connections.filter(k=>game.player.discoveredLocations.includes(k)).map(k=>locations[k].name).join(" / ");
+    list.appendChild(row);
+  }
+  map.appendChild(list);
   drawRoadMap();
 }
 
@@ -170,15 +178,3 @@ function renderAppleMap() {
 // openMap() function and every MAP / VIEW MAP button wired to the same action.
 renderMap = renderAppleMap;
 
-// Defensive wiring: if another script ever replaces an onclick handler, these
-// listeners still make the persistent utility buttons work.
-document.addEventListener("DOMContentLoaded", () => {
-  const safe = (id, fn) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("click", fn);
-  };
-  safe("map-button", () => { if (game.inProgress) { renderAppleMap(); openOverlay("map-overlay"); } });
-  safe("radio-button", () => { if (game.inProgress) openRadio(); });
-  safe("inventory-button", () => { if (game.inProgress) openInventory(); });
-});

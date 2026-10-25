@@ -202,7 +202,10 @@ function prepareTitleSeed() {
   document.getElementById("title-seed").textContent = game.seed;
 }
 
+let travelTimer = null;
+function cancelTravel() { clearTimeout(travelTimer); travelTimer = null; }
 function beginNight() {
+  cancelTravel();
   seedRandom(game.seed || generateSeed());
   game.weather = "Humid"; game.radioIndex = 1; game.eventHistory = [];
   game.player = makePlayer(); game.inProgress = true;
@@ -216,7 +219,7 @@ function beginNight() {
 
 function newNight() {
   if (game.inProgress && !window.confirm("Start a new night? Unsaved progress will be lost.")) return;
-  closeAllOverlays(); game.seed = generateSeed(); game.inProgress = false;
+  cancelTravel(); closeAllOverlays(); game.seed = generateSeed(); game.inProgress = false;
   document.getElementById("game-screen").hidden = true;
   document.getElementById("title-screen").hidden = false;
   prepareTitleSeed();
@@ -240,9 +243,9 @@ function travelTo(key) {
   if (game.player.fuel <= 0) return endGame("fuel");
 
   showNarrative(`You drive ${miles} miles to ${dest.name}.\n\n${dest.description}`);
-  showChoices([]);
+  game.scene={kind:"location"}; showChoices([]);
   const chance = Math.min(.78, .42 + dest.risk * .07 + game.player.curiosity * .01);
-  if (random() < chance) window.setTimeout(() => triggerEvent(key), settings.motionDisabled ? 0 : 350);
+  if (random() < chance) travelTimer = window.setTimeout(() => { if (game.inProgress && game.player.location === key) triggerEvent(key); }, settings.motionDisabled ? 0 : 350);
   else showLocationActions();
 }
 
@@ -355,7 +358,7 @@ function hasItem(item) { return !!game.player && game.player.inventory.includes(
 
 // Endings ---------------------------------------------------------------------
 function endGame(type) {
-  game.inProgress = false; closeAllOverlays();
+  cancelTravel(); game.inProgress = false; game.ending = type; closeAllOverlays();
   const text = {
     broadcast: "ENDING: THE SOURCE\n\nInside Station 17, the tape machine is recording a voice you recognize as your own. It is calmly reading tomorrow night's weather.\n\nA green light marked TRANSMIT clicks on.\nSomewhere in Florida, a car radio finds 103.7 FM.",
     home: "ENDING: HOME BEFORE SUNRISE\n\nYou turn toward Gainesville and keep driving until familiar streetlights replace the dark roads.\n\nAt home, the radio display glows 103.7 for one second after you remove the key.\nYou decide not to mention this to anyone before breakfast.",
@@ -363,7 +366,7 @@ function endGame(type) {
   }[type];
   showNarrative(text); showChoices([{ label: "NEW NIGHT", action: restartFromEnding }, { label: "LOAD SAVED NIGHT", action: loadGame }]); setStatus("Night concluded.");
 }
-function restartFromEnding() { game.seed = generateSeed(); game.inProgress = false; document.getElementById("game-screen").hidden = true; document.getElementById("title-screen").hidden = false; prepareTitleSeed(); }
+function restartFromEnding() { cancelTravel(); game.seed = generateSeed(); game.inProgress = false; document.getElementById("game-screen").hidden = true; document.getElementById("title-screen").hidden = false; prepareTitleSeed(); }
 
 // Time / HUD ------------------------------------------------------------------
 function advanceTime(minutes) { game.player.time += minutes; }
@@ -383,9 +386,12 @@ function updateHUD() {
 
 // UI --------------------------------------------------------------------------
 function showNarrative(text) {
-  const target = document.getElementById("narrative"); if (typeTimer) clearInterval(typeTimer); target.textContent = "";
-  if (settings.motionDisabled || matchMedia("(prefers-reduced-motion: reduce)").matches) return void (target.textContent = text);
-  let i = 0; typeTimer = setInterval(() => { target.textContent += text[i++] || ""; if (i >= text.length) { clearInterval(typeTimer); typeTimer = null; } }, 8);
+  game.sceneText = text;
+  const target = document.getElementById("narrative");
+  if (typeTimer) clearInterval(typeTimer);
+  target.textContent = text;
+  target.setAttribute("tabindex", "-1");
+  target.focus({preventScroll:true});
 }
 function showChoices(choices) {
   const box = document.getElementById("choices"); box.replaceChildren();
@@ -404,16 +410,27 @@ function saveGame() {
   catch (err) { console.error(err); setStatus("This browser blocked local saving. The night is still playable."); }
 }
 function loadGame() {
-  let raw; try { raw = localStorage.getItem(SAVE_KEY); } catch { return setStatus("This browser blocked access to saved games."); }
-  if (!raw) return setStatus("No saved night found in this browser.");
   try {
-    const s = JSON.parse(raw); if (!s.player || !locations[s.player.location]) throw new Error("Bad save");
-    game.seed = Number(s.seed) || generateSeed(); game.rngState = Number(s.rngState) >>> 0; game.weather = s.weather || "Humid";
-    game.radioIndex = Number.isInteger(s.radioIndex) ? s.radioIndex : 1; game.eventHistory = Array.isArray(s.eventHistory) ? s.eventHistory : [];
-    game.player = normalizePlayer(s.player); game.inProgress = true;
-    document.getElementById("title-screen").hidden = true; document.getElementById("game-screen").hidden = false;
-    updateHUD(); showNarrative(`Saved night restored.\n\n${locations[game.player.location].description}`); showLocationActions(); closeAllOverlays(); setStatus("Saved night loaded.");
-  } catch (err) { console.error(err); setStatus("The saved night could not be loaded. Start a new night instead."); }
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return setStatus("No saved night found in this browser.");
+    const s = JSON.parse(raw);
+    if (s.version !== 1 || !s.player || !locations[s.player.location]) throw Error("Invalid save");
+    if (s.story && (!Array.isArray(s.story.evidence) || !Array.isArray(s.story.actionLog) || !s.story.flags || typeof s.story.flags !== "object")) throw Error("Invalid story");
+    if(s.story?.decisions && Object.values(s.story.decisions).some(v=>v!==0&&v!==1)) throw Error("Invalid decisions");
+    if(s.scene && !["opening","location","function","decision","result","event"].includes(s.scene.kind)) throw Error("Invalid scene");
+    if(s.scene?.kind==="decision" && !decisionMoments.some(m=>m.id===s.scene.id)) throw Error("Invalid decision scene");
+    if(s.scene?.kind==="function" && !Object.hasOwn(sceneFunctions,s.scene.name)) throw Error("Invalid function scene");
+    const player = normalizePlayer(s.player);
+    cancelTravel(); closeAllOverlays();
+    Object.assign(game, {seed:Number(s.seed)||generateSeed(), rngState:Number(s.rngState)>>>0,
+      weather:typeof s.weather === "string" ? s.weather : "Humid", player,
+      radioIndex:Number.isInteger(s.radioIndex)&&s.radioIndex>=0&&s.radioIndex<radioStations.length?s.radioIndex:1,
+      eventHistory:Array.isArray(s.eventHistory)?s.eventHistory:[], inProgress:s.inProgress!==false,
+      story:s.story||freshStoryState(), scene:s.scene||null, ending:s.ending||null});
+    document.getElementById("title-screen").hidden=true;
+    document.getElementById("game-screen").hidden=false;
+    updateHUD(); restoreScene(); setStatus("Saved night loaded.");
+  } catch (err) { console.error(err); setStatus("The saved night could not be loaded. Your current night is unchanged."); }
 }
 function normalizePlayer(s) {
   const b = makePlayer();
@@ -436,8 +453,27 @@ function applySettings() {
   document.body.classList.remove("theme-green", "theme-amber", "theme-gameboy", "no-motion"); document.body.classList.add(`theme-${settings.theme}`); if (settings.motionDisabled) document.body.classList.add("no-motion");
   document.querySelectorAll('input[name="theme"]').forEach(r => { r.checked = r.value === settings.theme; }); document.getElementById("motion-toggle").checked = settings.motionDisabled;
 }
-function openOverlay(id) { closeAllOverlays(); const o = document.getElementById(id); o.hidden = false; o.querySelector("button, input")?.focus(); }
-function closeAllOverlays() { document.querySelectorAll(".overlay").forEach(o => { o.hidden = true; }); }
+let overlayOpener = null;
+function openOverlay(id) {
+  closeAllOverlays(); overlayOpener=document.activeElement;
+  const o=document.getElementById(id); o.hidden=false;
+  document.getElementById("app").inert=true;
+  o.querySelector("button, input")?.focus();
+}
+function closeAllOverlays() {
+  document.querySelectorAll(".overlay").forEach(o=>o.hidden=true);
+  document.getElementById("app").inert=false;
+  if (overlayOpener?.isConnected) overlayOpener.focus();
+  overlayOpener=null;
+}
+document.addEventListener("keydown", e=>{
+  const o=document.querySelector(".overlay:not([hidden])");
+  if (!o || e.key!=="Tab") return;
+  const list=[...o.querySelectorAll("button,input")];
+  const first=list[0],last=list[list.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
 
 // Sanity checks ---------------------------------------------------------------
 function validateData() {
@@ -457,11 +493,12 @@ function init() {
   document.getElementById("settings-button").onclick = () => openOverlay("settings-overlay");
   document.getElementById("tune-down").onclick = () => tuneRadio(-1);
   document.getElementById("tune-up").onclick = () => tuneRadio(1);
-  document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => document.getElementById(b.dataset.close).hidden = true);
+  document.querySelectorAll("[data-close]").forEach(b => b.onclick = closeAllOverlays);
   document.querySelectorAll('input[name="theme"]').forEach(r => r.onchange = () => { settings.theme = r.value; applySettings(); saveSettings(); });
   document.getElementById("motion-toggle").onchange = e => { settings.motionDisabled = e.target.checked; applySettings(); saveSettings(); };
-  document.querySelectorAll(".overlay").forEach(o => o.onclick = e => { if (e.target === o) o.hidden = true; });
+  document.querySelectorAll(".overlay").forEach(o => o.onclick = e => { if (e.target === o) closeAllOverlays(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeAllOverlays(); });
 }
 
 document.addEventListener("DOMContentLoaded", init);
+

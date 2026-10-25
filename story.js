@@ -295,19 +295,6 @@ renderRadio = function storyRenderRadio() {
 
 // Preserve story state through the existing v1 save loader, which otherwise
 // restores only the original core fields.
-const baseStoryLoadGame = loadGame;
-loadGame = function storyLoadGame() {
-  let savedStory = null;
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (parsed?.story) savedStory = parsed.story;
-  } catch {}
-  game.story = savedStory || freshStoryState();
-  baseStoryLoadGame();
-  if (game.inProgress) ensureStoryState();
-};
-
 // --- End ---------------------------------------------------------------------
 const storyFinalEvent = {
   id: "story-station-door",
@@ -440,3 +427,6 @@ endGame = function storyEndGame(type) {
   if (type === "floridaMan") return finaleArchive();
   return baseStoryEndGame(type);
 };
+
+
+events.splice(events.findIndex(e=>e.id==="station-door"),1,{...storyFinalEvent,id:"station-door"});
