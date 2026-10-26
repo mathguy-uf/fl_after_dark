@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071108">
+  <meta name="description" content="Anonymous play statistics for Florida After Dark.">
+  <title>Florida After Dark // Play Stats</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stats-shell { max-width: 920px; margin: 0 auto; padding: 1rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; margin: 1rem 0; }
+    .stat-card { border: 1px solid currentColor; padding: .85rem; min-height: 92px; }
+    .stat-label { display: block; font-size: .8rem; opacity: .8; margin-bottom: .5rem; }
+    .stat-value { display: block; font-size: 1.8rem; font-weight: 700; }
+    .ending-table { width: 100%; border-collapse: collapse; margin-top: .75rem; }
+    .ending-table th, .ending-table td { border-bottom: 1px dashed currentColor; padding: .55rem .25rem; text-align: left; }
+    .ending-table td:last-child, .ending-table th:last-child { text-align: right; }
+    .stats-note { line-height: 1.55; opacity: .9; }
+    .stats-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
+    .stats-error { min-height: 1.5em; }
+  </style>
+</head>
+<body class="theme-green">
+  <main class="stats-shell">
+    <section class="panel">
+      <p class="eyebrow">HARRINGTON SOFTWARE // NIGHT DRIVE SYSTEM</p>
+      <h1>FLORIDA AFTER DARK // PLAY STATS</h1>
+      <p>Anonymous, approximate game-use counts from the live GitHub Pages version.</p>
+
+      <div class="stats-grid" aria-live="polite">
+        <div class="stat-card"><span class="stat-label">UNIQUE PLAYERS*</span><strong class="stat-value" id="unique-players">—</strong></div>
+        <div class="stat-card"><span class="stat-label">NIGHTS STARTED</span><strong class="stat-value" id="starts">—</strong></div>
+        <div class="stat-card"><span class="stat-label">NIGHTS COMPLETED</span><strong class="stat-value" id="completions">—</strong></div>
+        <div class="stat-card"><span class="stat-label">COMPLETION RATE</span><strong class="stat-value" id="completion-rate">—</strong></div>
+        <div class="stat-card"><span class="stat-label">STATION 17 ENDINGS</span><strong class="stat-value" id="station17-endings">—</strong></div>
+      </div>
+
+      <h2>ENDING BREAKDOWN</h2>
+      <table class="ending-table">
+        <thead><tr><th>Ending</th><th>Count</th></tr></thead>
+        <tbody>
+          <tr><td>Morning Traffic</td><td id="ending-morning">—</td></tr>
+          <tr><td>Dead Air</td><td id="ending-silence">—</td></tr>
+          <tr><td>Borrowed Time</td><td id="ending-borrowed">—</td></tr>
+          <tr><td>The Other Driver</td><td id="ending-loop">—</td></tr>
+          <tr><td>Home Before Sunrise</td><td id="ending-home">—</td></tr>
+          <tr><td>Empty</td><td id="ending-fuel">—</td></tr>
+        </tbody>
+      </table>
+
+      <p class="stats-note"><strong>*Unique players</strong> means unique browser profiles that have started the game since tracking was added. Clearing site storage, changing browsers, or using another device can count the same person again. The game sends no name, email, save data, free-form text, or persistent player ID.</p>
+      <p class="stats-note">These counters are intended for informal game telemetry, not research-grade measurement. They are public counters and should be treated as approximate.</p>
+      <p id="status" class="stats-error" role="status"></p>
+
+      <div class="stats-actions">
+        <button type="button" id="refresh">[ REFRESH COUNTS ]</button>
+        <a href="./">[ RETURN TO GAME ]</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+    const API = "https://countapi.mileshilliard.com/api/v1";
+    const PREFIX = "florida_after_dark_mathguy_uf_v1";
+    const NAMES = [
+      "unique_players", "starts", "completions",
+      "ending_morning", "ending_silence", "ending_borrowed",
+      "ending_loop", "ending_home", "ending_fuel"
+    ];
+
+    async function readCounter(name) {
+      try {
+        const response = await fetch(`${API}/get/${PREFIX}_${name}`, {cache: "no-store"});
+        if (response.status === 404) return 0;
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        return Number.parseInt(data.value, 10) || 0;
+      } catch {
+        return null;
+      }
+    }
+
+    function put(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    async function refreshStats() {
+      const status = document.getElementById("status");
+      status.textContent = "Reading counters...";
+      const values = await Promise.all(NAMES.map(readCounter));
+      if (values.some(v => v === null)) {
+        status.textContent = "One or more counters could not be read. Try refreshing later.";
+        return;
+      }
+      const data = Object.fromEntries(NAMES.map((name, i) => [name, values[i]]));
+      put("unique-players", data.unique_players.toLocaleString());
+      put("starts", data.starts.toLocaleString());
+      put("completions", data.completions.toLocaleString());
+      put("completion-rate", data.starts ? `${Math.round(100 * data.completions / data.starts)}%` : "—");
+      const station17 = data.ending_morning + data.ending_silence + data.ending_borrowed + data.ending_loop;
+      put("station17-endings", station17.toLocaleString());
+      put("ending-morning", data.ending_morning.toLocaleString());
+      put("ending-silence", data.ending_silence.toLocaleString());
+      put("ending-borrowed", data.ending_borrowed.toLocaleString());
+      put("ending-loop", data.ending_loop.toLocaleString());
+      put("ending-home", data.ending_home.toLocaleString());
+      put("ending-fuel", data.ending_fuel.toLocaleString());
+      status.textContent = `Updated ${new Date().toLocaleString()}.`;
+    }
+
+    document.getElementById("refresh").addEventListener("click", refreshStats);
+    refreshStats();
+  </script>
+</body>
+</html>
