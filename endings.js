@@ -41,8 +41,9 @@ let playCountUniquePending = false;
 let playCountRunComplete = false;
 
 function playCountEnabled() {
-  return window.location.hostname === "mathguy-uf.github.io" &&
-    window.location.pathname.startsWith("/fl_after_dark");
+  const loc = window.location;
+  return !!loc && loc.hostname === "mathguy-uf.github.io" &&
+    loc.pathname.startsWith("/fl_after_dark");
 }
 
 async function incrementPlayCounter(name) {
