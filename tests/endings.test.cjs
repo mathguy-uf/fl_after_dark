@@ -5,7 +5,7 @@ function harness(){
  const element=(tag='div')=>({tagName:tag.toUpperCase(),textContent:'',hidden:false,children:[],dataset:{},classList:{add(){},remove(){}},setAttribute(){},append(...x){this.children.push(...x)},appendChild(x){this.children.push(x)},replaceChildren(...x){this.children=x},addEventListener(k,f){this[k]=f},querySelector(){return null},querySelectorAll(){return []},focus(){}});
  const document={body:element(),getElementById(id){if(!els.has(id))els.set(id,element());return els.get(id)},createElement:element,querySelector(){return element()},querySelectorAll(){return []},addEventListener(type,fn){if(type==="DOMContentLoaded")ready.push(fn)}};
  const c=vm.createContext({document,console:{...console,error(){}},Math,Date,Uint32Array,crypto:{getRandomValues(a){a[0]=1234;return a}},localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=v}},matchMedia(){return {matches:true}},setInterval(){return 1},clearInterval(){},setTimeout(f,ms){timers.push({f,ms});return timers.length},clearTimeout(id){if(timers[id-1])timers[id-1].f=()=>{};},MutationObserver:class{observe(){}},getComputedStyle(){return {getPropertyValue(){return ''}}}});c.window=c;c.confirm=()=>true;
- for(const p of ['game.js','map.js','scenes.js','humor.js','story.js','story-scenes.js','consequences.js','endings.js'])vm.runInContext(fs.readFileSync(root+p,'utf8'),c,{filename:p});
+ for(const p of ['game.js','map.js','scenes.js','humor.js','story.js','story-scenes.js','consequences.js','endings.js','runtime.js'])vm.runInContext(fs.readFileSync(root+p,'utf8'),c,{filename:p});
  const run=s=>vm.runInContext(s,c);run('settings.motionDisabled=true;game.seed=1234;beginNight()');
  return {run,timers,els,ready};
 }
@@ -13,13 +13,13 @@ const assert=require('assert');
 let h=harness();
 h.run('saveGame();loadGame()');assert(h.els.get('choices').children[0].textContent.includes('OPEN THE LETTER'));
 h.run('beginTheDrive();game.story.evidence.push("pier");localStorage.setItem(SAVE_KEY,"bad");loadGame()');assert(h.run('game.story.evidence.includes("pier")'));
-h=harness();h.run('game.player.location="station17";triggerEvent("station17",false)');assert(h.els.get('choices').children[1].textContent.includes('WATCH THE MONITOR'));
+h=harness();h.run('game.player.location="station17";game.story.flags.routeRevelation=true;triggerEvent("station17",false)');assert(h.els.get('choices').children[1].textContent.includes('WATCH THE MONITOR'));
 h.run('finaleMonitor();saveGame();loadGame()');assert(h.els.get('choices').children[0].textContent.includes('READ THE LETTER'));
 for(const id of ['help','phone','coin','tape','warning','register','reserve'])for(const v of [0,1]){
  h=harness();h.run('beginTheDrive();game.player.inventory.push("strangeCoin","cassetteTape");showDecision('+JSON.stringify(id)+')');h.els.get('choices').children[v].click();h.run('saveGame();loadGame()');assert.equal(h.run('decisions()['+JSON.stringify(id)+']'),v);h.run('game.player.location=decisionMoments.find(m=>m.id==='+JSON.stringify(id)+').later;for(let step=0;step<6;step++)showLocationActions()');assert(h.run('game.story.callbacks['+JSON.stringify(id)+']'));if(id==='coin')assert(h.run('hasItem("strangeCoin")'));
 }
-// Dismissing a deterministic story beat must re-enter the current layered
-// renderer, so later decisions appear and save/load does not replay the beat.
+// Dismissing a deterministic story beat must re-enter the canonical runtime,
+// so later decisions appear and save/load does not replay the beat.
 h=harness();h.run('beginTheDrive();game.player.location="spaceCoast";game.story.evidence=["pier"];gatorHeadline()');
 h.els.get('choices').children[1].click();assert.equal(h.run('game.scene.kind'),'decision');assert.equal(h.run('game.scene.id'),'warning');
 h.run('saveGame();loadGame()');assert.equal(h.run('game.scene.kind'),'decision');assert.equal(h.run('game.scene.id'),'warning');assert(!h.els.get('narrative').textContent.includes('ARCHIVE REPORT'));
@@ -29,8 +29,23 @@ assert.equal(h.run('maybeStoryInterlude()'),false);assert.equal(h.run('!!game.st
 h.run('game.player.location="spaceCoast";game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.gatorHeadline'));
 h.run('game.player.location="evergladesRoad";game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.roadEcho'));assert.equal(h.run('!!game.story.flags.routeRevelation'),false);
 h.run('game.scene={kind:"location"}');assert.equal(h.run('maybeStoryInterlude()'),true);assert(h.run('game.story.flags.routeRevelation'));assert.equal(h.run('game.story.act'),3);
+// The natural WHO IS SUBJECT path must clear its serious result state and force
+// the YOU KNOW THE WAY reveal before Station 17 can become a travel button.
+h=harness();h.run('beginTheDrive();game.player.discoveredLocations.push("station17");game.story.flags.gatorHeadline=true;game.story.evidence=["pier","motel"];game.player.location="evergladesRoad";game.scene={kind:"location",id:"evergladesRoad"};roadEcho()');
+h.els.get('choices').children[0].click();assert.equal(h.run('game.scene.kind'),'result');assert.equal(h.run('game.scene.serious'),true);
+h.els.get('choices').children[0].click();assert(h.run('game.story.flags.routeRevelation'));assert(h.els.get('narrative').textContent.includes('YOU KNOW THE WAY'));assert(h.els.get('choices').children.some(b=>b.textContent.includes('GO FIND STATION 17')));
+// Station 17 may be internally discovered for clue bookkeeping, but never shown
+// as a road until the story reveal has occurred.
+h=harness();h.run('beginTheDrive();game.player.location="evergladesRoad";game.player.discoveredLocations.push("station17");game.story.flags.driveStarted=false;showLocationActions()');
+assert(!h.els.get('choices').children.some(b=>b.textContent.includes('DRIVE TO Station 17')));h.run('game.story.flags.routeRevelation=true;showLocationActions()');assert(h.els.get('choices').children.some(b=>b.textContent.includes('DRIVE TO Station 17')));
+// Artwork is resolved from explicit scene identity, never words in the narration.
+h=harness();assert.equal(h.run('beginNight.name'),'runtimeBeginNight');assert.equal(h.run('travelTo.name'),'runtimeTravelTo');assert.equal(h.run('triggerEvent.name'),'runtimeTriggerEvent');assert.equal(h.run('resolveChoice.name'),'runtimeResolveChoice');assert.equal(h.run('restoreScene.name'),'runtimeRestoreScene');assert.equal(h.run('renderScene.name'),'runtimeRenderScene');
+h.run('game.player.location="spaceCoast";game.scene={kind:"decision",id:"warning"}');assert.equal(h.run('resolveSceneArt()'),'spaceCoast');
+h.run('game.player.location="abandonedMotel";game.scene={kind:"event",id:"payphone"}');assert.equal(h.run('resolveSceneArt()'),'abandonedMotel');
+h.run('game.scene={kind:"function",name:"gatorHeadline"}');assert.equal(h.run('resolveSceneArt()'),'spaceCoast');
+h.run('game.scene={kind:"function",name:"pierRecognition"}');assert.equal(h.run('resolveSceneArt()'),'oldFishingPier');
 for(const p of fs.readdirSync(root).filter(p=>p.endsWith('.js')))new vm.Script(fs.readFileSync(root+p,'utf8'),{filename:p});
-console.log('PASS: opening/finale restore, failed load preserves progress, story exits restore current layers, Act III pacing, all 14 decision branches, coin clue retained, all scripts parse.');
+console.log('PASS: canonical runtime ownership, opening/finale restore, failed load preserves progress, Act III gating, explicit scene art, all 14 decision branches, coin clue retained, all scripts parse.');
 
 const reached=new Set();
 for(let bits=0;bits<128;bits++){
@@ -42,7 +57,7 @@ assert.deepEqual([...reached].sort(),['borrowed','loop','morning','silence']);
 const routes=[['morning',{register:0,warning:0,help:0}],['silence',{register:0,phone:0,tape:0}],['borrowed',{coin:0}],['loop',{}]];
 for(const [key,d] of routes){
  h=harness();h.ready.forEach(fn=>fn());
- h.run('game.story.decisions='+JSON.stringify(d)+';game.player.miles=184;game.player.visitedLocations=["gainesville","citrusStand"];game.player.location="station17";triggerEvent("station17",true)');
+ h.run('game.story.decisions='+JSON.stringify(d)+';game.player.miles=184;game.player.visitedLocations=["gainesville","citrusStand"];game.player.location="station17";game.story.flags.routeRevelation=true;triggerEvent("station17",true)');
  h.els.get('choices').children[0].click();
  for(let i=0;i<6;i++)h.els.get('choices').children[0].click();
  assert.equal(h.run('game.story.report.key'),key);assert.equal(h.run('game.inProgress'),false);
