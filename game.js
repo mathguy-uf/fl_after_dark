@@ -12,8 +12,8 @@ const ITEM_LABELS = {
   roadMap: "road map",
   fishingLure: "fishing lure",
   motelKey: "motel key stamped 17",
-  strangeCoin: "strange coin",
-  cassetteTape: "cassette tape marked SIDE B ONLY",
+  strangeCoin: "strange coin engraved with service-road coordinates",
+  cassetteTape: "cassette tape marked SIDE B ONLY / ACCESS 17",
   coordinatesReceipt: "coordinates written on a receipt"
 };
 
@@ -130,23 +130,23 @@ const events = [
     { label: "STOP AT THE TURN", result: "A rusted sign reads COUNTY 17. The arrow points into darkness.", time: 4, curiosity: 2 }
   ]},
   { id: "fisherman", locations: ["oldFishingPier"], strange: true, clue: true, text: "A fisherman stands at the far end of the pier. Without turning, he says your name and asks if the redfish are running yet.", choices: [
-    { label: "ASK HOW HE KNOWS", result: "'Radio,' he says. 'Everybody's on the radio tonight.' He flicks you an old coin.", item: "strangeCoin", time: 6, curiosity: 2 },
-    { label: "TALK ABOUT FISH", result: "He discusses snook, tarpon, and tides. When you glance away, the pier is empty. A coin sits on the rail.", item: "strangeCoin", time: 8, curiosity: 1 }
+    { label: "ASK HOW HE KNOWS", result: "'Radio,' he says. 'Everybody's on the radio tonight.' He flicks you an old coin. Coordinates are engraved around its edge. 'You left this with me. Said to send you to the motel next.'", item: "strangeCoin", time: 6, curiosity: 2 },
+    { label: "TALK ABOUT FISH", result: "He discusses snook, tarpon, and tides. Then he leaves a coin on the rail. Coordinates run around its edge. 'Take that to the motel. You said it would help you find the road.'", item: "strangeCoin", time: 8, curiosity: 1 }
   ]},
   { id: "motel-doors", locations: ["abandonedMotel"], strange: true, clue: true, text: "You count the motel doors. Every room is numbered 17. There are twelve doors.", choices: [
     { label: "TRY A DOOR", result: "Locked. A key drops from the ice machine behind you.", item: "motelKey", time: 5, curiosity: 1 },
-    { label: "CHECK THE OFFICE", result: "The register is blank except for tonight's date, written over and over. A key waits on the desk.", item: "motelKey", time: 6, curiosity: 2 }
+    { label: "CHECK THE OFFICE", result: "Behind the register is a rack of keys, each tagged with a different date. You take the one marked tonight. Its teeth are still warm.", item: "motelKey", time: 6, curiosity: 2 }
   ]},
-  { id: "room17", locations: ["abandonedMotel"], strange: true, clue: true, requiresItem: "motelKey", text: "The key marked 17 opens the third door you try. Inside: one chair, one unplugged television, and a cassette tape on the carpet.", choices: [
-    { label: "TAKE THE TAPE", result: "The label reads SIDE B ONLY. There is no Side A label.", item: "cassetteTape", time: 5, curiosity: 2 },
-    { label: "TAKE IT AND LEAVE", result: "The television clicks once as you close the door.", item: "cassetteTape", time: 3, curiosity: 1 }
+  { id: "room17", locations: ["abandonedMotel"], strange: true, clue: true, requiresItem: "motelKey", text: "The key marked 17 opens the third door you try. Inside: one chair, a dark television, and a cassette tape on the carpet. The bed has been removed. A pale rectangle marks where it stood.", choices: [
+    { label: "TAKE THE TAPE", result: "The label reads SIDE B ONLY / ACCESS 17. Beneath it: MATCH TO COIN AND RECEIPT. There is no Side A label.", item: "cassetteTape", time: 5, curiosity: 2 },
+    { label: "TAKE IT AND LEAVE", result: "The television clicks once as you close the door. On the cassette label: SIDE B ONLY / ACCESS 17. MATCH TO COIN AND RECEIPT.", item: "cassetteTape", time: 3, curiosity: 1 }
   ]},
   { id: "receipt", locations: ["citrusStand"], strange: true, clue: true, text: "No one is at the citrus stand. Beside the register is a fresh receipt for $0.17. Coordinates are written on the back.", choices: [
-    { label: "TAKE THE RECEIPT", result: "The coordinates point south. Very far south.", item: "coordinatesReceipt", time: 3, curiosity: 2 },
-    { label: "POCKET IT", result: "The bare bulb flickers once as the receipt leaves the counter.", item: "coordinatesReceipt", curiosity: 1 }
+    { label: "TAKE THE RECEIPT", result: "The coordinates point south. Very far south. Below them: OLD PIER — COIN. MOTEL — TAPE. Three things to bring to a place that is not on your map.", item: "coordinatesReceipt", time: 3, curiosity: 2 },
+    { label: "POCKET IT", result: "The bare bulb flickers once as the receipt leaves the counter. Below the coordinates: OLD PIER — COIN. MOTEL — TAPE.", item: "coordinatesReceipt", curiosity: 1 }
   ]},
   { id: "radio-coordinates", locations: ["gainesville", "suwanneeRiver", "spaceCoast"], strange: true, text: "The radio snaps to life by itself. A voice reads coordinates, pauses, then says: 'Receipt confirms.'", choices: [
-    { label: "WRITE THEM DOWN", result: "You copy the numbers onto an old receipt from the cup holder.", item: "coordinatesReceipt", time: 4, curiosity: 2 },
+    { label: "WRITE THEM DOWN", result: "You copy the numbers onto an old receipt from the cup holder. The voice adds: OLD PIER — COIN. MOTEL — TAPE. You write that down too.", item: "coordinatesReceipt", time: 4, curiosity: 2 },
     { label: "TURN OFF RADIO", result: "The display goes dark. The voice finishes the coordinates anyway." }
   ]},
   { id: "cassette-click", locations: ["stAugustine", "spaceCoast"], strange: true, requiresItem: "cassetteTape", text: "From under the dashboard comes the click of a cassette deck. Your car does not have a cassette deck.", choices: [
@@ -518,4 +518,5 @@ function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
 

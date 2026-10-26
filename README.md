@@ -118,6 +118,8 @@ The game text and visual design are original to this project and use no external
 
 Seven one-time decisions are remembered across saves: roadside help, the phone, the coin, the cassette, warning a family, the motel register, and emergency fuel. Later scenes change supplies, delays, evidence, and the final archive. Giving away the coin preserves its coordinates.
 
+The letter supplies concrete leads to the pier, motel, and citrus stand. A missing minute gives the driver a reason to investigate; witness accounts and broadcasts gradually turn roadside absurdity into a personal mystery. Story dialogue and consequence scenes suppress optional humor asides. Witness references, radio locations, and rescue dialogue follow the player's actual route and decisions.
+
 The three-act pacing is deliberate: collecting the three route items can mark Station 17 internally for clue bookkeeping, but it remains unavailable to the player until the Space Coast archive report, Everglades radio echo, and **YOU KNOW THE WAY** route reveal have occurred. Both the map and travel controls enforce that story gate. The rare same-car doppelgänger scene is restricted to the middle act so it cannot expose the central idea on the first road out of Gainesville.
 
 Illustrations are selected from explicit scene, event, decision, and story-function IDs. Narrative text no longer decides which picture is drawn, so a postcard mentioning Station 17 or dialogue mentioning an alligator cannot accidentally replace the actual current-location artwork.
@@ -141,8 +143,13 @@ The Station 17 identity reveal always happens first. The first matching route be
 4. **The Other Driver:** otherwise, the loop completes.
 
 Going home (**Home Before Sunrise**) or exhausting fuel (**Empty**) ends the night early. Missing decisions do not count as selecting either option.
+
+The escape routes are foreshadowed in dialogue: June remembers the driver who helped her; leaving emergency fuel makes another rescue vehicle available; the family promises to contact road service. The phone and cassette establish the relay's interruptible gap. The register explicitly authorizes a return, and the pier figure explains what the coin buys. At the finale, the received letter and the fresh copy remain separate objects. The driver writes to give their forgetful earlier self a route to the relay, completing the setup of the torn envelope, different ink, and crescent of mud.
 </details>
 
 ## Regression checks
 
 Run `node tests/endings.test.cjs`. The dependency-free JavaScript/DOM-stub harness loads the same nine scripts as the page and verifies that `runtime.js` owns the canonical high-risk entry points. It checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, the **WHO IS SUBJECT?** route-reveal path, hidden Station 17 travel gating, explicit scene-art routing, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
+
+Story continuity checks also cover an unopened-letter home ending, reaching the Space Coast before the pier, radio updates during backtracking, both rescue variants and their saved text, missing versus chosen register decisions, and humor suppression during consequential dialogue.
+

@@ -131,3 +131,47 @@ clickText('STEP INSIDE');
 for(let i=0;i<6;i++){h.run('saveGame();loadGame()');h.els.get('choices').children[0].click();}
 assert.equal(h.run('game.story.report.key'),'loop');assert(h.els.get('narrative').textContent.includes('Your boots are wet.'));assert(h.els.get('narrative').textContent.includes('12:47 AM'));
 console.log('PASS: connected Gainesville-to-Station-17 journey, ordered middle beats, all clues, saved finale stages, and wet-boots loop.');
+
+// Story continuity follows the route actually taken, including partial saves.
+h=harness();const opening=h.els.get('narrative').textContent;
+h.run('saveGame();loadGame()');assert.equal(h.els.get('narrative').textContent,opening);
+h.run('endGame("home")');assert(!h.els.get('narrative').textContent.includes('Station 17'));
+h=harness();h.run('openTheLetter();endGame("home")');assert(h.els.get('narrative').textContent.includes('Station 17'));
+
+// Space Coast is reachable via the motel without meeting the fisherman first.
+h=harness();h.run('game.player.location="spaceCoast";game.story.evidence=["motel"];gatorHeadline()');
+assert(!h.els.get('narrative').textContent.includes('remember the fisherman'));
+h.run('game.story.flags.pierRecognition=true;gatorHeadline()');
+assert(h.els.get('narrative').textContent.includes('remember the fisherman'));
+
+// The radio must not describe northbound backtracking as continuing south.
+h=harness();h.run('beginTheDrive();game.story.act=2;game.player.location="cedarKey";game.story.actionLog=[{choice:"KEEP THE COIN",location:"oldFishingPier",time:77}];game.radioIndex=7;renderRadio()');
+assert(h.els.get('radio-text').textContent.includes('KEEP THE COIN'));
+assert(h.els.get('radio-text').textContent.includes('CURRENT LOCATION: CEDAR KEY'));
+assert(!h.els.get('radio-text').textContent.includes('CONTINUES SOUTH'));
+
+// Each rescue has the correct person and remains identical after save/load.
+for(const [d,rescuer,absent] of [
+ [{register:0,warning:0,help:0},'June steps out','A road-service truck pulls up'],
+ [{register:0,warning:0,help:1,reserve:0},'A road-service truck pulls up','June steps out'],
+ [{register:0,warning:0,reserve:0},'A road-service truck pulls up','June steps out']
+]){
+ h=harness();h.run('game.story.decisions='+JSON.stringify(d)+';finaleLoop()');
+ assert.equal(h.run('game.ending'),'morning');
+ const text=h.els.get('narrative').textContent;
+ assert(text.includes(rescuer));assert(!text.includes(absent));
+ h.run('saveGame();loadGame()');assert.equal(h.els.get('narrative').textContent,text);
+}
+// A missing signature decision is not presented as a choice the player made.
+h=harness();h.run('finaleLetter()');assert(h.els.get('narrative').textContent.includes('do not remember signing'));
+h.run('game.story.decisions={register:0};finaleLetter()');assert(h.els.get('narrative').textContent.includes('crossed-out signature'));
+h.run('game.story.decisions={register:1};finaleLetter()');assert(h.els.get('narrative').textContent.includes('finish the job'));
+
+// Keep comic asides out of consequential dialogue and its later payoff.
+h=harness();h.run('beginTheDrive();showDecision("help")');h.els.get('choices').children[0].click();
+assert.equal(h.run('game.scene.serious'),true);assert.equal(h.run('chooseAside(game.sceneText)'),"");
+h.run('game.player.location="spaceCoast";showLocationActions()');
+assert.equal(h.run('game.story.callbacks.help'),true);
+assert.equal(h.run('game.scene.serious'),true);assert.equal(h.run('chooseAside(game.sceneText)'),"");
+console.log('PASS: opening restore, unopened-letter ending, nonlinear witness continuity, radio backtracking, both rescue variants, signature history, and serious dialogue.');
+

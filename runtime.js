@@ -184,7 +184,7 @@ function runtimeStoryAndConsequences() {
     }
     updateHUD();
     if (game.player.fuel <= 0) { endGame("fuel"); return true; }
-    showResult(m.echo[v], false, game.player.location);
+    showResult(m.echo[v], true, game.player.location);
     return true;
   }
 
@@ -226,14 +226,7 @@ beginTheDrive = function runtimeBeginTheDrive() {
   const s = ensureStoryState();
   s.flags.driveStarted = true;
   game.scene = { kind: "location", id: "gainesville", art: "gainesville" };
-  showNarrative(
-    "The gas station behind you has already turned off its lights.\n" +
-    "The road south is empty.\n" +
-    "Your radio keeps losing the station.\n" +
-    "The letter sits in the glove box.\n" +
-    "You should probably go home.\n" +
-    "You don't."
-  );
+  showNarrative(STORY_DEPARTURE);
   showLocationActions();
   setStatus("OBJECTIVE: FIND STATION 17. LISTEN TO THE RADIO.");
 };
@@ -256,12 +249,7 @@ beginNight = function runtimeBeginNight() {
   document.getElementById("title-screen").hidden = true;
   document.getElementById("game-screen").hidden = false;
   updateHUD();
-  showNarrative(
-    "The gas station behind you goes dark.\n\n" +
-    "On the passenger seat is an envelope that was not there when you stopped for gas.\n\n" +
-    "Your name is written on the front.\n\n" +
-    "The handwriting is yours."
-  );
+  showNarrative(STORY_OPENING);
   showChoices([
     { label: "OPEN THE LETTER", action: openTheLetter },
     { label: "DRIVE HOME", action: () => endGame("home") }
@@ -358,7 +346,7 @@ restoreScene = function runtimeRestoreScene() {
   if (!s) {
     if (!game.story?.flags?.driveStarted) {
       game.scene = { kind: "opening", art: "letter" };
-      showNarrative("The envelope waits on the passenger seat. The handwriting is yours.");
+      showNarrative(STORY_OPENING);
       return showChoices([
         { label: "OPEN THE LETTER", action: openTheLetter },
         { label: "DRIVE HOME", action: () => endGame("home") }
@@ -367,7 +355,7 @@ restoreScene = function runtimeRestoreScene() {
     return showLocationScene();
   }
   if (s.kind === "opening") {
-    showNarrative("The envelope waits on the passenger seat. The handwriting is yours.");
+    showNarrative(STORY_OPENING);
     return showChoices([
       { label: "OPEN THE LETTER", action: openTheLetter },
       { label: "DRIVE HOME", action: () => endGame("home") }
@@ -385,3 +373,4 @@ restoreScene = function runtimeRestoreScene() {
   }
   return showLocationScene();
 };
+

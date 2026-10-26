@@ -4,21 +4,25 @@
 const NIGHT_ENDINGS = {
   morning: {
     name: "MORNING TRAFFIC",
-    text: "The transmitter clicks on. For once, the voice coming back is not yours.\n\nIt is the family you warned. They made it north. They called for help.\n\nOutside Station 17, headlights stop instead of following you. Someone opens the passenger door. You crossed your name out of the register; there is no replacement driver waiting in the archive.\n\nBy sunrise you are sitting in ordinary traffic. A school bus stops. Somebody honks.\n\nFor the first time all night, nobody knows who you are."
+    text: () => "The transmitter clicks on. A road-service call cuts across your voice: your plate number, the relay building, someone still inside.\n\nThe family you warned made it north. They kept their promise.\n\nOutside, headlights stop.\n\n" +
+      (decisions().help === 0
+        ? "June steps out of the pickup. She holds up her palm; your plate number is still there. 'I said I would remember.'\n\n"
+        : "A road-service truck pulls up. The driver puts the forest reserve can on the passenger floor to make room for you. 'Someone left me enough to get moving,' he says. 'Get in.'\n\n") +
+      "The terminal tries to print an instruction to stay. Your crossed-out signature fills the screen. AUTHORIZATION INCOMPLETE. For once, it has to wait.\n\nYou leave the letter on the desk and step through the door. Behind you, the tape keeps recording an empty chair.\n\nBy sunrise you are sitting in ordinary traffic. A school bus stops. Somebody honks.\n\nYou remember the whole night. When the driver asks where to take you, you give your home address without hesitating."
   },
   silence: {
     name: "DEAD AIR",
-    text: "You recognize the sound from the cassette: the relay closes just before your recorded voice begins. The phone call taught you what to do with a machine that counts down.\n\nYou pull the transmitter's power cable in the gap.\n\nYour crossed-out name disappears from the register. Every radio in the room falls silent. The letter stays on the desk. Nothing carries it back to Gainesville.\n\nOutside, you hear frogs, trucks, somebody opening a gas station.\n\nNothing tells you what happens next. You have never been so relieved."
+    text: "The countdown reaches ONE. The relay clicks.\n\nYou know this gap. You replayed it on the motel cassette. The phone call taught you to pull the plug before the voice begins.\n\nThe terminal searches for your signature. It finds the line you crossed out. In that hesitation, you pull the transmitter's power cable.\n\nEvery radio in the room falls silent. On the monitor, your other self turns away from the car. Then the picture goes dark.\n\nThe letter stays on the desk. You leave it there.\n\nOutside, frogs call from the ditch. A truck passes without slowing. You wait for an instruction, then realize you are free to stop waiting.\n\nYou start the car. The clock advances a minute. Then another."
   },
   borrowed: {
     name: "BORROWED TIME",
-    text: "The coin you gave the man in the window rolls out of the transmitter. Warm. Wet. Older than it was.\n\nOn the monitor, your other self opens his hand. He has paid for seventeen minutes. He points toward the door.\n\nYou leave before the letter can be delivered. Behind you, he takes your chair.\n\nAt the next intersection, every traffic light turns green. Your dashboard clock is seventeen minutes slow.\n\nYou are out of the night. Somewhere, another version of you is still paying for it."
+    text: "The transmitter clicks. Its display changes: TRANSFER CREDIT — 00:17.\n\nThe coin you gave away rolls into the tray. Warm. Wet. On the monitor, your other self opens his hand. The split thumbnail catches the light.\n\nThe man at the pier was asking you to trust him with this moment.\n\nSeventeen minutes. Enough to let somebody else get out.\n\nHe points toward the door. You leave the letter beside the microphone and run. Through the window, you see him take your chair. He does not look up.\n\nAt the next intersection, every traffic light turns green. Your dashboard clock is seventeen minutes slow.\n\nYou get to go home. You keep trying to decide whether leaving yourself behind counts as keeping a promise."
   },
   loop: {
     name: "THE OTHER DRIVER",
-    text: "The transmitter accepts your voice. There is no one outside to interrupt it, no silence between the words you can use, no coin buying you a way out.\n\nFor one second you hear every radio station at once.\n\nThen—\n\n12:47 AM. GAINESVILLE.\n\nThe gas station behind you goes dark. The road south is empty. You should probably go home. You don’t.\n\nAn envelope waits on the passenger seat.\n\nYour boots are wet.\n\nYou were never chasing Florida Man. You were leaving the stories behind you."
+    text: "The transmitter accepts your voice. You read the letter into the microphone, trying to make yourself hear the urgency this time.\n\nOn the monitor, the man with your face lifts the bucket into the car. You reach for its handle without looking down.\n\nFor one second you hear every radio station at once. Somewhere in that noise, a fisherman is being asked to remember a stranger.\n\nThen—\n\n12:47 AM. GAINESVILLE.\n\nThe gas station behind you goes dark. The road south is empty. Your radio keeps losing the station.\n\nAn envelope waits on the passenger seat. Its bottom edge is damp. You cannot remember putting it there.\n\nYou should probably go home.\nYou don't.\n\nYour boots are wet."
   },
-  home: {name:"HOME BEFORE SUNRISE",text:"You turn toward Gainesville and keep driving until familiar streetlights replace the dark roads.\n\nAt home, the radio display glows 103.7 for one second after you remove the key.\n\nYou decide not to mention this to anyone before breakfast."},
+  home: {name:"HOME BEFORE SUNRISE",text: () =>"You take the familiar streets home. At each turn, you say the next street name before the radio can.\n\nIn the driveway, the display glows 103.7 for one second after you remove the key.\n\nYou leave the envelope in the car. In the kitchen, you write down where you parked and what time you came home.\n\nThen you put the kettle on. " + (game.story?.letterRead ? "Whatever is at Station 17" : "Whoever left that envelope") + " will have to wait until daylight."},
   fuel: {name:"EMPTY",text:"The engine coughs once and the car rolls quietly to the shoulder.\n\nThe night becomes very large without the engine running.\n\nFar away, a radio tower blinks seventeen times."}
 };
 
@@ -76,7 +80,8 @@ function renderNightEpilogue() {
   document.getElementById("game-screen").hidden=false;
   document.getElementById("scene-frame").hidden=true;
   const report=game.story.report;
-  showNarrative(NIGHT_ENDINGS[report.key].text);
+  const endingText = NIGHT_ENDINGS[report.key].text;
+  showNarrative(typeof endingText === "function" ? endingText() : endingText);
   showChoices([{label:"END NIGHT",action:showNightReport}]);
   setStatus("Night concluded.");
 }
@@ -113,3 +118,4 @@ restartFromEnding=function(){document.getElementById("postgame-screen").hidden=t
 document.addEventListener("DOMContentLoaded",()=>{
  document.getElementById("drive-again-button").onclick=()=>{restartFromEnding();beginNight();};
 });
+
