@@ -56,6 +56,7 @@ fl_after_dark/
 ├── story-scenes.js
 ├── consequences.js
 ├── endings.js
+├── runtime.js
 ├── README.md
 ├── tests/
 └── assets/
@@ -83,22 +84,25 @@ Most editable content is near the top of `game.js`:
 - `radioStations` — frequencies and radio flavor text.
 - `ITEM_LABELS` — the small inventory list.
 
-The main game functions are intentionally straightforward: `travelTo()`, `triggerEvent()`, `showChoices()`, `advanceTime()`, `updateHUD()`, `openRadio()`, `openMap()`, `saveGame()`, and `loadGame()`.
+Story content lives primarily in `story.js` and remembered one-time decisions live in `consequences.js`.
+
+**Important:** `runtime.js` is loaded last and is the canonical integration layer for travel, location actions, event resolution, save-scene restoration, and scene-art selection. New systems should extend its runtime hooks or explicit art maps instead of wrapping those global functions again. This keeps behavior independent of incidental script-wrapper order.
 
 ## Project Structure
 
 ```text
 fl_after_dark/
-├── index.html      # Page structure and overlays
+├── index.html      # Page structure, overlays, and script load order
 ├── style.css       # CRT themes, responsive layout, accessibility styles
-├── game.js         # World data, encounters, radio, state, save/load, core endings
+├── game.js         # World data, encounters, radio, state, save/load, core helpers
 ├── map.js          # 280×192 pixel map and accessible route list
-├── scenes.js       # Procedural location/event illustrations
+├── scenes.js       # Procedural location/event drawing primitives
 ├── humor.js        # Occasional roadside asides; no separate Florida Man NPC
 ├── story.js        # Three-act mystery and Station 17 reveal
-├── story-scenes.js # Story-specific illustrations
-├── consequences.js # Remembered decisions and scene restoration
+├── story-scenes.js # Story-specific drawing functions
+├── consequences.js # Remembered decisions and consequence data
 ├── endings.js      # Branching conclusions and night report
+├── runtime.js      # Canonical gameplay integration and explicit art routing
 ├── tests/          # Dependency-free regression harness
 ├── README.md       # This file
 └── assets/         # Reserved for optional local assets
@@ -114,9 +118,11 @@ The game text and visual design are original to this project and use no external
 
 Seven one-time decisions are remembered across saves: roadside help, the phone, the coin, the cassette, warning a family, the motel register, and emergency fuel. Later scenes change supplies, delays, evidence, and the final archive. Giving away the coin preserves its coordinates.
 
-The three-act pacing is deliberate: collecting the three route items can reveal that Station 17 exists, but Act III does not begin until the Space Coast archive report and Everglades radio echo have occurred. The rare same-car doppelgänger scene is also restricted to the middle act so it cannot expose the central idea on the first road out of Gainesville.
+The three-act pacing is deliberate: collecting the three route items can mark Station 17 internally for clue bookkeeping, but it remains unavailable to the player until the Space Coast archive report, Everglades radio echo, and **YOU KNOW THE WAY** route reveal have occurred. Both the map and travel controls enforce that story gate. The rare same-car doppelgänger scene is restricted to the middle act so it cannot expose the central idea on the first road out of Gainesville.
 
-Runtime scripts load in order: game.js, map.js, scenes.js, humor.js, story.js, story-scenes.js, consequences.js, endings.js. Include all eight when copying or deploying. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
+Illustrations are selected from explicit scene, event, decision, and story-function IDs. Narrative text no longer decides which picture is drawn, so a postcard mentioning Station 17 or dialogue mentioning an alligator cannot accidentally replace the actual current-location artwork.
+
+Runtime scripts load in order: `game.js`, `map.js`, `scenes.js`, `humor.js`, `story.js`, `story-scenes.js`, `consequences.js`, `endings.js`, then **`runtime.js` last**. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
 
 ## Night complete
 
@@ -139,4 +145,4 @@ Going home (**Home Before Sunrise**) or exhausting fuel (**Empty**) ends the nig
 
 ## Regression checks
 
-Run `node tests/endings.test.cjs`. This dependency-free JavaScript/DOM-stub harness checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, interlude save/restore behavior, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
+Run `node tests/endings.test.cjs`. The dependency-free JavaScript/DOM-stub harness loads the same nine scripts as the page and verifies that `runtime.js` owns the canonical high-risk entry points. It checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, the **WHO IS SUBJECT?** route-reveal path, hidden Station 17 travel gating, explicit scene-art routing, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
