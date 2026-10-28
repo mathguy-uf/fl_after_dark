@@ -6,23 +6,17 @@
   <meta name="theme-color" content="#071108">
   <meta name="description" content="Florida After Dark — a retro terminal road story through strange Florida nights.">
   <title>Florida After Dark</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=art-20261028">
 </head>
 <body class="theme-green">
   <a class="skip-link" href="#game-main">Skip to game</a>
   <div class="crt-shell" id="app"><div class="screen-static" aria-hidden="true"></div>
     <header class="site-header"><div><p class="eyebrow">HARRINGTON SOFTWARE // NIGHT DRIVE SYSTEM</p><h1>FLORIDA AFTER DARK</h1></div><button class="icon-button" id="settings-button" type="button" aria-label="Open display settings">⚙ SETTINGS</button></header>
     <main id="game-main" tabindex="-1">
-      <section id="title-screen" class="panel title-screen" aria-labelledby="title-heading"><div class="boot-copy"><p>HARRINGTON SOFTWARE PRESENTS</p><h2 id="title-heading">FLORIDA AFTER DARK</h2><p>A PROCEDURAL ROAD STORY</p><p class="seed-line">NIGHT SEED: <strong id="title-seed">----</strong></p></div><pre class="ascii-palms" aria-hidden="true">       .-.-.                 _\/\_
-     .'     '.              /    \
-    /  .-.-.  \       __   \_/\_/
-   |  /     \  |  ___/  \___ ||
-    \ \     / /  /           \||
-     '._'-'_.'  /__ FLORIDA __\|
-        `-'          AFTER DARK</pre><button class="primary-action" id="begin-button" type="button">[ BEGIN NIGHT ]</button><p class="tiny-note">Best experienced with the lights low and the volume nonexistent.</p></section>
+      <section id="title-screen" class="panel title-screen" aria-labelledby="title-heading"><div class="boot-copy"><p>HARRINGTON SOFTWARE PRESENTS</p><h2 id="title-heading">FLORIDA AFTER DARK</h2><p>A PROCEDURAL ROAD STORY</p><p class="seed-line">NIGHT SEED: <strong id="title-seed">----</strong></p></div><figure class="scene-frame"><canvas id="title-scene" class="scene-canvas" width="504" height="216" role="img" aria-label="Green pixel illustration of UF Century Tower in Gainesville at night"></canvas></figure><button class="primary-action" id="begin-button" type="button">[ BEGIN NIGHT ]</button><p class="tiny-note">Best experienced with the lights low and the volume nonexistent.</p></section>
       <section id="game-screen" hidden>
         <section class="panel hud" aria-label="Night status"><div class="hud-title">FLORIDA AFTER DARK</div><div class="hud-grid"><span>TIME: <strong id="hud-time">12:47 AM</strong></span><span>LOCATION: <strong id="hud-location">Gainesville</strong></span><span>WEATHER: <strong id="hud-weather">Humid</strong></span><span>FUEL: <strong id="hud-fuel" aria-label="Fuel level">████████░░</strong></span><span>MILES: <strong id="hud-miles">000</strong></span><span>NIGHT SEED: <strong id="hud-seed">----</strong></span></div></section>
-        <figure id="scene-frame" class="panel scene-frame" hidden><canvas id="scene-canvas" class="scene-canvas" width="280" height="128" role="img" aria-label="Apple II-style pixel illustration of the current scene."></canvas><figcaption>HARRINGTON HI-RES // 280 × 128</figcaption></figure>
+        <figure id="scene-frame" class="panel scene-frame" hidden><canvas id="scene-canvas" class="scene-canvas" width="504" height="216" role="img" aria-label="Apple II-style pixel illustration of the current scene."></canvas><figcaption>HARRINGTON HI-RES // FLORIDA AFTER DARK</figcaption></figure>
         <section class="panel narrative-panel" aria-label="Story"><div id="narrative" class="narrative"></div><span class="cursor" aria-hidden="true">▋</span></section>
         <section class="panel action-panel" aria-label="Available actions"><h2 class="panel-label">AVAILABLE ACTIONS</h2><div id="choices" class="button-grid"></div></section>
         <section class="panel utility-panel" aria-label="Game controls"><button type="button" id="radio-button">[ RADIO ]</button><button type="button" id="map-button">[ VIEW MAP ]</button><button type="button" id="inventory-button">[ INVENTORY ]</button><button type="button" id="save-button">[ SAVE ]</button><button type="button" id="load-button">[ LOAD ]</button><button type="button" id="new-button">[ NEW NIGHT ]</button></section><p id="status-message" class="status-message" role="status" aria-live="polite"></p>
@@ -43,5 +37,6 @@
   <section class="overlay" id="map-overlay" hidden aria-labelledby="map-heading"><div class="overlay-card panel wide-card" role="dialog" aria-modal="true" aria-labelledby="map-heading"><div class="overlay-header"><h2 id="map-heading">ROAD MAP // APPLE II HI-RES</h2><button class="close-button" type="button" data-close="map-overlay" aria-label="Close map">[ X ]</button></div><p class="overlay-help">Only discovered roads are plotted. Florida remains uncooperative about scale.</p><div id="map-content" class="map-content"></div></div></section>
   <section class="overlay" id="inventory-overlay" hidden aria-labelledby="inventory-heading"><div class="overlay-card panel" role="dialog" aria-modal="true" aria-labelledby="inventory-heading"><div class="overlay-header"><h2 id="inventory-heading">GLOVE BOX / POCKETS</h2><button class="close-button" type="button" data-close="inventory-overlay" aria-label="Close inventory">[ X ]</button></div><ul id="inventory-list" class="inventory-list"></ul></div></section>
   <section class="overlay" id="settings-overlay" hidden aria-labelledby="settings-heading"><div class="overlay-card panel" role="dialog" aria-modal="true" aria-labelledby="settings-heading"><div class="overlay-header"><h2 id="settings-heading">DISPLAY SETTINGS</h2><button class="close-button" type="button" data-close="settings-overlay" aria-label="Close settings">[ X ]</button></div><fieldset><legend>COLOR MODE</legend><label><input type="radio" name="theme" value="green" checked> GREEN CRT</label><label><input type="radio" name="theme" value="amber"> AMBER CRT</label><label><input type="radio" name="theme" value="gameboy"> GAME BOY GRAYSCALE</label></fieldset><label class="toggle-line"><input type="checkbox" id="motion-toggle"> DISABLE FLICKER / TYPEWRITER ANIMATION</label></div></section>
-  <script src="game.js"></script><script src="map.js"></script><script src="scenes.js"></script><script src="humor.js"></script><script src="story.js"></script><script src="story-scenes.js"></script><script src="consequences.js"></script><script src="endings.js"></script><script src="runtime.js"></script>
+  <script src="game.js?v=art-20261028"></script><script src="map.js?v=art-20261028"></script><script src="scenes.js?v=art-20261028"></script><script src="humor.js?v=art-20261028"></script><script src="story.js?v=art-20261028"></script><script src="story-scenes.js?v=art-20261028"></script><script src="consequences.js?v=art-20261028"></script><script src="endings.js?v=art-20261028"></script><script src="illustrations.js?v=art-20261028"></script><script src="runtime.js?v=art-20261028"></script>
 </body></html>
+

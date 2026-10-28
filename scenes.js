@@ -1,10 +1,10 @@
 "use strict";
 
 // FLORIDA AFTER DARK — APPLE II-STYLE SCENE ILLUSTRATIONS
-// Procedural 280x128 monochrome pictures inspired by early home-computer
-// adventure graphics. Everything is drawn at runtime; no external art assets.
+// Legacy drawing primitives retained for compatibility. The canonical runtime
+// displays the approved raster artwork through illustrations.js.
 
-const SCENE_W = 280, SCENE_H = 128;
+const SCENE_W = 504, SCENE_H = 216;
 
 function sceneColors() {
   const css = getComputedStyle(document.body);
@@ -56,3 +56,4 @@ function renderScene(text){const canvas=document.getElementById("scene-canvas");
 function scheduleScene(){clearTimeout(window.__fadSceneTimer);window.__fadSceneTimer=setTimeout(()=>{const n=document.getElementById("narrative");if(n&&n.textContent.trim())renderScene(n.textContent);},settings&&settings.motionDisabled?20:180);}
 
 document.addEventListener("DOMContentLoaded",()=>{const n=document.getElementById("narrative");if(n)new MutationObserver(scheduleScene).observe(n,{childList:true,characterData:true,subtree:true});document.querySelectorAll('input[name="theme"]').forEach(r=>r.addEventListener("change",scheduleScene));});
+

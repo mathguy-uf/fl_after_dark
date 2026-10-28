@@ -31,14 +31,14 @@ Everything is button-driven, so the game works well with a mouse, keyboard, or p
 - Florida wildlife: alligators, armadillos, raccoons, deer, manatees, pelicans, ibis, and anhingas.
 - Coastal fishing references including snook, tarpon, redfish, and grouper.
 - Eight text-only radio frequencies with several unusual signals.
-- Apple II-style runtime-drawn scene art and a 280×192 discovery map.
+- Illustrated green-screen scene art with recognizable Florida landmarks, plus a 280×192 discovery map.
 - Light fuel/time management without survival-game bookkeeping.
 - Four decision-dependent Station 17 endings, plus going home and running out of fuel.
 - Seeded pseudo-random encounter selection.
 - Local browser saving, including the current story scene.
 - Responsive mobile layout.
 - Keyboard-accessible controls and reduced-motion support.
-- No image assets or external runtime dependencies required.
+- Local artwork included; no external runtime dependencies required.
 
 ## Run Locally
 
@@ -56,6 +56,7 @@ fl_after_dark/
 ├── story-scenes.js
 ├── consequences.js
 ├── endings.js
+├── illustrations.js
 ├── runtime.js
 ├── README.md
 ├── tests/
@@ -96,16 +97,17 @@ fl_after_dark/
 ├── style.css       # CRT themes, responsive layout, accessibility styles
 ├── game.js         # World data, encounters, radio, state, save/load, core helpers
 ├── map.js          # 280×192 pixel map and accessible route list
-├── scenes.js       # Procedural location/event drawing primitives
+├── scenes.js       # Scene dimensions, palette and scheduling; legacy drawing helpers
 ├── humor.js        # Occasional roadside asides; no separate Florida Man NPC
 ├── story.js        # Three-act mystery and Station 17 reveal
 ├── story-scenes.js # Story-specific drawing functions
 ├── consequences.js # Remembered decisions and consequence data
 ├── endings.js      # Branching conclusions and night report
+├── illustrations.js # Approved artwork atlas, source rectangles and image loading
 ├── runtime.js      # Canonical gameplay integration and explicit art routing
 ├── tests/          # Dependency-free regression harness
 ├── README.md       # This file
-└── assets/         # Reserved for optional local assets
+└── assets/art/     # Included green-screen artwork (two lossless WebP atlases)
 ```
 
 ## License
@@ -124,7 +126,7 @@ The three-act pacing is deliberate: collecting the three route items can mark St
 
 Illustrations are selected from explicit scene, event, decision, and story-function IDs. Narrative text no longer decides which picture is drawn, so a postcard mentioning Station 17 or dialogue mentioning an alligator cannot accidentally replace the actual current-location artwork.
 
-Runtime scripts load in order: `game.js`, `map.js`, `scenes.js`, `humor.js`, `story.js`, `story-scenes.js`, `consequences.js`, `endings.js`, then **`runtime.js` last**. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
+Runtime scripts load in order: `game.js`, `map.js`, `scenes.js`, `humor.js`, `story.js`, `story-scenes.js`, `consequences.js`, `endings.js`, `illustrations.js`, then **`runtime.js` last**. The map includes a readable route list. Narrative appears immediately for reliable assistive reading; motion settings control decorative effects. Saves restore the current story scene. Mobile Safari and VoiceOver still need device testing.
 
 ## Night complete
 
@@ -149,7 +151,20 @@ The escape routes are foreshadowed in dialogue: June remembers the driver who he
 
 ## Regression checks
 
-Run `node tests/endings.test.cjs`. The dependency-free JavaScript/DOM-stub harness loads the same nine scripts as the page and verifies that `runtime.js` owns the canonical high-risk entry points. It checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, the **WHO IS SUBJECT?** route-reveal path, hidden Station 17 travel gating, explicit scene-art routing, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
+Run `node tests/endings.test.cjs`. The dependency-free JavaScript/DOM-stub harness loads the same ten scripts as the page and verifies that `runtime.js` owns the canonical high-risk entry points. It checks all 128 decision combinations, all four finale paths, both early endings, save/load restoration, all 14 decision branches, report counts, encounter deduplication, replay resets, Act III story ordering, the **WHO IS SUBJECT?** route-reveal path, hidden Station 17 travel gating, explicit scene-art routing, the middle-act doppelgänger gate, and a connected Gainesville-to-Station-17 journey. It is not a substitute for browser rendering, Mobile Safari, or VoiceOver testing.
 
 Story continuity checks also cover an unopened-letter home ending, reaching the Space Coast before the pier, radio updates during backtracking, both rescue variants and their saved text, missing versus chosen register decisions, and humor suppression during consequential dialogue.
 
+
+
+## Illustrated scenes
+
+All 14 locations and the letter, archive, monitor, bucket, road, loop, and reveal use the approved green-on-black illustrated style. Dedicated payphone, cassette, family, and alligator views support their encounters. The title screen features UF Century Tower. Regional details include the Paynes Prairie observation tower, Suwannee railroad trestle, Cedar Key waterfront, Vehicle Assembly Building, Shark Valley-inspired tower, Bridge of Lions, Juniper Springs sign, and Fred the Tree on the old Seven Mile Bridge. These are stylized regional illustrations, not exact street views.
+
+The 24 panels are stored in two local lossless WebP atlases. `illustrations.js` draws only the scene rectangles, excluding preview labels and borders. The scene canvas is 504×216 with nearest-neighbor display; the interactive map remains a separate 280×192 canvas driven by discovered routes. Amber and grayscale themes recolor the illustrations through CSS without reading canvas pixels, preserving support for opening `index.html` directly. Keep `assets/art/` alongside the scripts when downloading the game.
+
+Images are cached after loading. A completed download redraws the current scene, so rapid travel or loading a save cannot display an earlier scene. Loading or unavailable-art messages leave the text adventure playable. Illustration captions for assistive technology describe the current artwork.
+
+Artwork was created with AI image generation from the approved original art direction, then encoded as lossless WebP with decoded RGB pixels verified identical to the source PNGs. No third-party game sprites are included. The full artwork transfer is approximately 4.8 MB, cached for the session.
+
+Run `node tests/illustrations.test.cjs` for asset coverage, crop bounds, image-cache behavior, late-loading images, failure handling, and script-order checks. The story suite additionally verifies illustration routing through saves and decisions. The atlas crops have also been rendered and visually inspected with a real canvas implementation. Full browser/device testing remains recommended.

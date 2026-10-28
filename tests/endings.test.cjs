@@ -5,7 +5,7 @@ function harness(){
  const element=(tag='div')=>({tagName:tag.toUpperCase(),textContent:'',hidden:false,children:[],dataset:{},classList:{add(){},remove(){}},setAttribute(){},append(...x){this.children.push(...x)},appendChild(x){this.children.push(x)},replaceChildren(...x){this.children=x},addEventListener(k,f){this[k]=f},querySelector(){return null},querySelectorAll(){return []},focus(){}});
  const document={body:element(),getElementById(id){if(!els.has(id))els.set(id,element());return els.get(id)},createElement:element,querySelector(){return element()},querySelectorAll(){return []},addEventListener(type,fn){if(type==="DOMContentLoaded")ready.push(fn)}};
  const c=vm.createContext({document,console:{...console,error(){}},Math,Date,Uint32Array,crypto:{getRandomValues(a){a[0]=1234;return a}},localStorage:{getItem(k){return store[k]??null},setItem(k,v){store[k]=v}},matchMedia(){return {matches:true}},setInterval(){return 1},clearInterval(){},setTimeout(f,ms){timers.push({f,ms});return timers.length},clearTimeout(id){if(timers[id-1])timers[id-1].f=()=>{};},MutationObserver:class{observe(){}},getComputedStyle(){return {getPropertyValue(){return ''}}}});c.window=c;c.confirm=()=>true;
- for(const p of ['game.js','map.js','scenes.js','humor.js','story.js','story-scenes.js','consequences.js','endings.js','runtime.js'])vm.runInContext(fs.readFileSync(root+p,'utf8'),c,{filename:p});
+ for(const p of ['game.js','map.js','scenes.js','humor.js','story.js','story-scenes.js','consequences.js','endings.js','illustrations.js','runtime.js'])vm.runInContext(fs.readFileSync(root+p,'utf8'),c,{filename:p});
  const run=s=>vm.runInContext(s,c);run('settings.motionDisabled=true;game.seed=1234;beginNight()');
  return {run,timers,els,ready};
 }
@@ -40,8 +40,8 @@ h=harness();h.run('beginTheDrive();game.player.location="evergladesRoad";game.pl
 assert(!h.els.get('choices').children.some(b=>b.textContent.includes('DRIVE TO Station 17')));h.run('game.story.flags.routeRevelation=true;showLocationActions()');assert(h.els.get('choices').children.some(b=>b.textContent.includes('DRIVE TO Station 17')));
 // Artwork is resolved from explicit scene identity, never words in the narration.
 h=harness();assert.equal(h.run('beginNight.name'),'runtimeBeginNight');assert.equal(h.run('travelTo.name'),'runtimeTravelTo');assert.equal(h.run('triggerEvent.name'),'runtimeTriggerEvent');assert.equal(h.run('resolveChoice.name'),'runtimeResolveChoice');assert.equal(h.run('restoreScene.name'),'runtimeRestoreScene');assert.equal(h.run('renderScene.name'),'runtimeRenderScene');
-h.run('game.player.location="spaceCoast";game.scene={kind:"decision",id:"warning"}');assert.equal(h.run('resolveSceneArt()'),'spaceCoast');
-h.run('game.player.location="abandonedMotel";game.scene={kind:"event",id:"payphone"}');assert.equal(h.run('resolveSceneArt()'),'abandonedMotel');
+h.run('game.player.location="spaceCoast";game.scene={kind:"decision",id:"warning"}');assert.equal(h.run('resolveSceneArt()'),'family');
+h.run('game.player.location="abandonedMotel";game.scene={kind:"event",id:"payphone"}');assert.equal(h.run('resolveSceneArt()'),'phone');
 h.run('game.scene={kind:"function",name:"gatorHeadline"}');assert.equal(h.run('resolveSceneArt()'),'spaceCoast');
 h.run('game.scene={kind:"function",name:"pierRecognition"}');assert.equal(h.run('resolveSceneArt()'),'oldFishingPier');
 for(const p of fs.readdirSync(root).filter(p=>p.endsWith('.js')))new vm.Script(fs.readFileSync(root+p,'utf8'),{filename:p});
@@ -175,3 +175,11 @@ assert.equal(h.run('game.story.callbacks.help'),true);
 assert.equal(h.run('game.scene.serious'),true);assert.equal(h.run('chooseAside(game.sceneText)'),"");
 console.log('PASS: opening restore, unopened-letter ending, nonlinear witness continuity, radio backtracking, both rescue variants, signature history, and serious dialogue.');
 
+
+
+// Every canonical location and explicit runtime art ID has replacement artwork.
+for(const key of h.run('Object.keys(locations)'))assert(h.run('Object.hasOwn(SCENE_ILLUSTRATIONS,'+JSON.stringify(key)+')'),key);
+for(const key of h.run('[...Object.values(RUNTIME_EVENT_ART),...Object.values(RUNTIME_FUNCTION_ART),...Object.values(RUNTIME_DECISION_ART),...Object.values(RUNTIME_CHOICE_ART)].filter(Boolean)')){
+ assert(h.run('Object.hasOwn(SCENE_ILLUSTRATIONS,'+JSON.stringify(key)+')||Object.hasOwn(ILLUSTRATION_ALIASES,'+JSON.stringify(key)+')||'+JSON.stringify(key)+'==="alligator"'),key);
+}
+console.log('PASS: every location and canonical scene ID has illustrated artwork.');

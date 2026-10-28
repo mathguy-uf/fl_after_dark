@@ -45,7 +45,8 @@ const RUNTIME_EVENT_ART = Object.freeze({
   alligator: "alligator",
   fisherman: "oldFishingPier",
   "motel-doors": "motel",
-  room17: "motel",
+  room17: "tape",
+  payphone: "phone",
   "station-door": "tower",
   "story-station-door": "tower"
 });
@@ -61,7 +62,7 @@ const RUNTIME_FUNCTION_ART = Object.freeze({
   roadEcho: "evergladesRoad",
   routeRevelation: "evergladesRoad",
   finaleArchive: "archive",
-  finaleTonight: "archive",
+  finaleTonight: "floridaMan",
   finaleMonitor: "monitor",
   finaleLetter: "letter",
   finaleTypeLetter: "letter",
@@ -71,16 +72,17 @@ const RUNTIME_FUNCTION_ART = Object.freeze({
 
 const RUNTIME_DECISION_ART = Object.freeze({
   help: "suwanneeRiver",
-  phone: "citrusStand",
+  phone: "phone",
   coin: "oldFishingPier",
-  tape: "motel",
-  warning: "spaceCoast",
+  tape: "tape",
+  warning: "family",
   register: "motel",
   reserve: "ocalaForest"
 });
 
 const RUNTIME_CHOICE_ART = Object.freeze({
-  "station-door:WATCH THE MONITOR": "monitor"
+  "station-door:WATCH THE MONITOR": "monitor",
+  "story-station-door:WATCH THE MONITOR": "monitor"
 });
 
 function resolveSceneArt(scene = game.scene) {
@@ -104,34 +106,11 @@ function artForChoice(scene, choice) {
 }
 
 function drawRuntimeArt(ctx, c, art) {
-  if (art === "letter" && typeof drawStoryLetter === "function") return drawStoryLetter(ctx, c);
-  if (art === "archive" && typeof drawStoryArchive === "function") return drawStoryArchive(ctx, c);
-  if (art === "monitor" && typeof drawStoryMonitor === "function") return drawStoryMonitor(ctx, c);
-  if (art === "bucket" && typeof drawStoryBucket === "function") return drawStoryBucket(ctx, c);
-  if (art === "loop" && typeof drawStoryLoop === "function") return drawStoryLoop(ctx, c);
-  if (art === "alligator") return drawAlligator(ctx, c);
-  if (art === "motel") return drawMotel(ctx, c);
-  if (art === "tower") return drawRadioTower(ctx, c);
-  if (art === "floridaMan") return drawFloridaMan(ctx, c);
-  if (art === "road") return drawGenericRoad(ctx, c);
-  if (locations[art]) return drawLocation(ctx, art, c);
-  return drawGenericRoad(ctx, c);
+  return drawIllustratedScene(ctx, c, art);
 }
 
 function runtimeArtLabel(art) {
-  const special = {
-    letter: "the mysterious letter",
-    archive: "the Station 17 incident archive",
-    monitor: "the Station 17 security monitor",
-    bucket: "the wet five-gallon bucket",
-    loop: "the 12:47 AM time loop",
-    alligator: "an alligator encounter",
-    motel: "the abandoned motel",
-    tower: "Station 17",
-    road: "the night road",
-    floridaMan: "a Florida Man image"
-  };
-  return special[art] || locations[art]?.name || "the current scene";
+  return illustrationFor(art).description;
 }
 
 renderScene = function runtimeRenderScene() {
@@ -143,7 +122,9 @@ renderScene = function runtimeRenderScene() {
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = c.bg;
   ctx.fillRect(0, 0, SCENE_W, SCENE_H);
-  drawRuntimeArt(ctx, c, art);
+  const status = drawRuntimeArt(ctx, c, art);
+  canvas.dataset.art = art;
+  canvas.dataset.artStatus = status;
   frame.hidden = false;
   canvas.setAttribute("aria-label", `Apple II-style pixel illustration of ${runtimeArtLabel(art)}.`);
 };
@@ -373,4 +354,5 @@ restoreScene = function runtimeRestoreScene() {
   }
   return showLocationScene();
 };
+
 
