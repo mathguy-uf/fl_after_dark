@@ -224,6 +224,7 @@ beginNight = function runtimeBeginNight() {
   game.ending = null;
   game.story = freshStoryState();
   game.scene = { kind: "opening", art: "letter" };
+  void trackNightStart();
   if (!game.player.inventory.includes("mysteryLetter")) game.player.inventory.push("mysteryLetter");
 
   document.getElementById("postgame-screen").hidden = true;
@@ -354,5 +355,6 @@ restoreScene = function runtimeRestoreScene() {
   }
   return showLocationScene();
 };
+
 
 

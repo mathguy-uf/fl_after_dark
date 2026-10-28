@@ -26,13 +26,13 @@
     <section class="panel">
       <p class="eyebrow">HARRINGTON SOFTWARE // NIGHT DRIVE SYSTEM</p>
       <h1>FLORIDA AFTER DARK // PLAY STATS</h1>
-      <p>Anonymous, approximate game-use counts from the live GitHub Pages version.</p>
+      <p>Corrected counting series (v2), beginning October 28, 2026. Earlier totals are excluded because restart clicks could inflate them.</p>
 
       <div class="stats-grid" aria-live="polite">
-        <div class="stat-card"><span class="stat-label">UNIQUE PLAYERS*</span><strong class="stat-value" id="unique-players">—</strong></div>
+        <div class="stat-card"><span class="stat-label">BROWSER PROFILES*</span><strong class="stat-value" id="unique-players">—</strong></div>
         <div class="stat-card"><span class="stat-label">NIGHTS STARTED</span><strong class="stat-value" id="starts">—</strong></div>
-        <div class="stat-card"><span class="stat-label">NIGHTS COMPLETED</span><strong class="stat-value" id="completions">—</strong></div>
-        <div class="stat-card"><span class="stat-label">COMPLETION RATE</span><strong class="stat-value" id="completion-rate">—</strong></div>
+        <div class="stat-card"><span class="stat-label">NIGHTS ENDED</span><strong class="stat-value" id="completions">—</strong></div>
+        <div class="stat-card"><span class="stat-label">ANY-ENDING RATE</span><strong class="stat-value" id="completion-rate">—</strong></div>
         <div class="stat-card"><span class="stat-label">STATION 17 ENDINGS</span><strong class="stat-value" id="station17-endings">—</strong></div>
       </div>
 
@@ -49,8 +49,8 @@
         </tbody>
       </table>
 
-      <p class="stats-note"><strong>*Unique players</strong> means unique browser profiles that have started the game since tracking was added. Clearing site storage, changing browsers, or using another device can count the same person again. The game sends no name, email, save data, free-form text, or persistent player ID.</p>
-      <p class="stats-note">These counters are intended for informal game telemetry, not research-grade measurement. They are public counters and should be treated as approximate.</p>
+      <p class="stats-note"><strong>*Browser profiles</strong> estimates browsers that began a night in this counting series; it does not identify people. Clearing site storage, changing browsers, or using another device can count the same person again. The game sends no name, email, save data, free-form text, or persistent player ID.</p>
+      <p class="stats-note">Nights ended includes going home and running out of fuel. Station 17 endings are listed separately. Rates use recorded starts in this series. Legacy saved nights are excluded. Public counters remain approximate: blocked requests, storage restrictions, and network failures can lose counts; failed requests are not retried because that could double-count them.</p>
       <p id="status" class="stats-error" role="status"></p>
 
       <div class="stats-actions">
@@ -63,9 +63,9 @@
   <script>
     "use strict";
     const API = "https://countapi.mileshilliard.com/api/v1";
-    const PREFIX = "florida_after_dark_mathguy_uf_v1";
+    const PREFIX = "florida_after_dark_mathguy_uf_v2";
     const NAMES = [
-      "unique_players", "starts", "completions",
+      "unique_players", "starts",
       "ending_morning", "ending_silence", "ending_borrowed",
       "ending_loop", "ending_home", "ending_fuel"
     ];
@@ -76,7 +76,9 @@
         if (response.status === 404) return 0;
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        return Number.parseInt(data.value, 10) || 0;
+        const value = Number(data.value);
+        if (data.value === null || data.value === undefined || !Number.isSafeInteger(value) || value < 0) throw new Error("Invalid counter");
+        return value;
       } catch {
         return null;
       }
@@ -89,16 +91,20 @@
     async function refreshStats() {
       const status = document.getElementById("status");
       status.textContent = "Reading counters...";
+      document.getElementById("refresh").disabled = true;
+      document.querySelectorAll(".stat-value, .ending-table td[id]").forEach(el => { el.textContent = "—"; });
       const values = await Promise.all(NAMES.map(readCounter));
+      document.getElementById("refresh").disabled = false;
       if (values.some(v => v === null)) {
         status.textContent = "One or more counters could not be read. Try refreshing later.";
         return;
       }
       const data = Object.fromEntries(NAMES.map((name, i) => [name, values[i]]));
+      const ended = NAMES.filter(name => name.startsWith("ending_")).reduce((sum, name) => sum + data[name], 0);
       put("unique-players", data.unique_players.toLocaleString());
       put("starts", data.starts.toLocaleString());
-      put("completions", data.completions.toLocaleString());
-      put("completion-rate", data.starts ? `${Math.round(100 * data.completions / data.starts)}%` : "—");
+      put("completions", ended.toLocaleString());
+      put("completion-rate", data.starts ? `${Math.round(100 * ended / data.starts)}%` : "—");
       const station17 = data.ending_morning + data.ending_silence + data.ending_borrowed + data.ending_loop;
       put("station17-endings", station17.toLocaleString());
       put("ending-morning", data.ending_morning.toLocaleString());
@@ -115,3 +121,4 @@
   </script>
 </body>
 </html>
+

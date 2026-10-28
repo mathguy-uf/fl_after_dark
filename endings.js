@@ -27,75 +27,90 @@ const NIGHT_ENDINGS = {
 };
 
 // ---------------------------------------------------------------------------
-// Lightweight anonymous play counts.
-//
-// Counters are only sent from the production GitHub Pages site. A single local
-// storage flag prevents the same browser profile from being counted as a new
-// player every time it starts another night. No name, email, player ID, story
-// choices, save data, or free-form text is sent.
-
+// Anonymous play counts, v2. Run IDs never leave this browser.
+// Count lifecycle transitions, not clicks. Local claims are written BEFORE
+// requests: an ambiguous network failure must not cause duplicate increments.
 const PLAY_COUNT_API = "https://countapi.mileshilliard.com/api/v1";
-const PLAY_COUNT_PREFIX = "florida_after_dark_mathguy_uf_v1";
-const PLAY_COUNT_PLAYER_KEY = "fad.analytics.unique-player.v1";
-let playCountUniquePending = false;
-let playCountRunComplete = false;
+const PLAY_COUNT_PREFIX = "florida_after_dark_mathguy_uf_v2";
+const PLAY_COUNT_PLAYER_KEY = "fad.analytics.browser.v2";
+const PLAY_COUNT_RUN_KEY = "fad.analytics.run.v2.";
+const playCountTasks = new Map();
 
 function playCountEnabled() {
   const loc = window.location;
   return !!loc && loc.hostname === "mathguy-uf.github.io" &&
-    loc.pathname.startsWith("/fl_after_dark");
+    (loc.pathname === "/fl_after_dark" || loc.pathname.startsWith("/fl_after_dark/"));
 }
 
 async function incrementPlayCounter(name) {
-  if (!playCountEnabled()) return null;
+  if (!playCountEnabled()) return false;
   try {
     const response = await fetch(`${PLAY_COUNT_API}/hit/${PLAY_COUNT_PREFIX}_${name}`, {
-      cache: "no-store",
-      keepalive: true
+      cache: "no-store", keepalive: true
     });
-    if (!response.ok) return null;
-    return await response.json();
-  } catch {
-    // Analytics must never interfere with the game.
-    return null;
-  }
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.value !== null && data.value !== undefined &&
+      Number.isSafeInteger(Number(data.value)) && Number(data.value) >= 0;
+  } catch { return false; } // Telemetry must never interrupt gameplay.
 }
 
-function uniquePlayerAlreadyCounted() {
-  try {
-    return localStorage.getItem(PLAY_COUNT_PLAYER_KEY) === "1";
-  } catch {
-    return false;
-  }
+function withPlayCountLock(key, task) {
+  // Web Locks serialize the same saved night across tabs. The promise queue
+  // also serializes calls within a page where Web Locks are unavailable.
+  const previous = playCountTasks.get(key) || Promise.resolve();
+  const next = previous.then(() => window.navigator?.locks
+    ? window.navigator.locks.request(key, task) : task()).catch(() => {});
+  playCountTasks.set(key, next);
+  void next.finally(() => { if (playCountTasks.get(key) === next) playCountTasks.delete(key); });
+  return next;
 }
 
-async function countUniquePlayerOnce() {
-  if (playCountUniquePending || uniquePlayerAlreadyCounted()) return;
-  playCountUniquePending = true;
-  const result = await incrementPlayCounter("unique_players");
-  if (result) {
-    try {
-      localStorage.setItem(PLAY_COUNT_PLAYER_KEY, "1");
-    } catch {
-      // A blocked localStorage write only makes the estimate less precise.
+function countUniquePlayerOnce() {
+  return withPlayCountLock(PLAY_COUNT_PLAYER_KEY, async () => {
+    if (localStorage.getItem(PLAY_COUNT_PLAYER_KEY)) return;
+    localStorage.setItem(PLAY_COUNT_PLAYER_KEY, "attempted");
+    if (await incrementPlayCounter("unique_players")) {
+      localStorage.setItem(PLAY_COUNT_PLAYER_KEY, "counted");
     }
-  }
-  playCountUniquePending = false;
+  });
 }
 
 function trackNightStart() {
-  if (!playCountEnabled()) return;
-  playCountRunComplete = false;
-  void incrementPlayCounter("starts");
-  void countUniquePlayerOnce();
+  if (!playCountEnabled() || !game.inProgress || !game.story) return Promise.resolve();
+  // A unique run token is retained by the existing save/load mechanism.
+  if (!game.story.playCount) {
+    try { game.story.playCount = {version: 2, id: window.crypto.randomUUID()}; }
+    catch { return Promise.resolve(); }
+  }
+  const run = game.story.playCount;
+  if (run.version !== 2 || typeof run.id !== "string") return Promise.resolve();
+  const key = PLAY_COUNT_RUN_KEY + run.id;
+  return withPlayCountLock(key, async () => {
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, JSON.stringify({start: "attempted"}));
+    if (await incrementPlayCounter("starts")) {
+      localStorage.setItem(key, JSON.stringify({start: "counted"}));
+      void countUniquePlayerOnce();
+    }
+  });
 }
 
-function trackNightComplete(key) {
-  if (!playCountEnabled() || playCountRunComplete) return;
-  playCountRunComplete = true;
-  const safeKey = Object.hasOwn(NIGHT_ENDINGS, key) ? key : "other";
-  void incrementPlayCounter("completions");
-  void incrementPlayCounter(`ending_${safeKey}`);
+function trackNightComplete(ending) {
+  const run = game.story?.playCount;
+  if (!playCountEnabled() || run?.version !== 2 || typeof run.id !== "string" ||
+      !Object.hasOwn(NIGHT_ENDINGS, ending)) return Promise.resolve();
+  const key = PLAY_COUNT_RUN_KEY + run.id;
+  return withPlayCountLock(key, async () => {
+    const record = JSON.parse(localStorage.getItem(key) || "null");
+    // Exclude legacy saves and unconfirmed starts from the v2 cohort. A local
+    // ledger survives loading a save made before this run's ending was reached.
+    if (record?.start !== "counted" || record.ending) return;
+    record.ending = ending;
+    localStorage.setItem(key, JSON.stringify(record));
+    await incrementPlayCounter(`ending_${ending}`);
+    // Dashboard totals are the sum of ending counters, not a separate request.
+  });
 }
 
 // First matching route wins. Missing decisions never count as having chosen.
@@ -190,7 +205,5 @@ const endingRestart=restartFromEnding;
 restartFromEnding=function(){document.getElementById("postgame-screen").hidden=true;return endingRestart();};
 document.addEventListener("DOMContentLoaded",()=>{
  document.getElementById("drive-again-button").onclick=()=>{restartFromEnding();beginNight();};
- for (const id of ["begin-button", "drive-again-button", "new-button"]) {
-   document.getElementById(id)?.addEventListener("click", trackNightStart, {capture:true});
- }
 });
+
