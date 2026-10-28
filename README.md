@@ -31,7 +31,7 @@ Everything is button-driven, so the game works well with a mouse, keyboard, or p
 - Florida wildlife: alligators, armadillos, raccoons, deer, manatees, pelicans, ibis, and anhingas.
 - Coastal fishing references including snook, tarpon, redfish, and grouper.
 - Eight text-only radio frequencies with several unusual signals.
-- Illustrated green-screen scene art with recognizable Florida landmarks, plus a 280×192 discovery map.
+- Illustrated green-screen scene art with recognizable Florida landmarks, plus a 640×520 illustrated discovery map.
 - Light fuel/time management without survival-game bookkeeping.
 - Four decision-dependent Station 17 endings, plus going home and running out of fuel.
 - Seeded pseudo-random encounter selection.
@@ -96,7 +96,7 @@ fl_after_dark/
 ├── index.html      # Page structure, overlays, and script load order
 ├── style.css       # CRT themes, responsive layout, accessibility styles
 ├── game.js         # World data, encounters, radio, state, save/load, core helpers
-├── map.js          # 280×192 pixel map and accessible route list
+├── map.js          # 640×520 illustrated map and accessible route list
 ├── scenes.js       # Scene dimensions, palette and scheduling; legacy drawing helpers
 ├── humor.js        # Occasional roadside asides; no separate Florida Man NPC
 ├── story.js        # Three-act mystery and Station 17 reveal
@@ -161,10 +161,16 @@ Story continuity checks also cover an unopened-letter home ending, reaching the 
 
 All 14 locations and the letter, archive, monitor, bucket, road, loop, and reveal use the approved green-on-black illustrated style. Dedicated payphone, cassette, family, and alligator views support their encounters. The title screen features UF Century Tower. Regional details include the Paynes Prairie observation tower, Suwannee railroad trestle, Cedar Key waterfront, Vehicle Assembly Building, Shark Valley-inspired tower, Bridge of Lions, Juniper Springs sign, and Fred the Tree on the old Seven Mile Bridge. These are stylized regional illustrations, not exact street views.
 
-The 24 panels are stored in two local lossless WebP atlases. `illustrations.js` draws only the scene rectangles, excluding preview labels and borders. The scene canvas is 504×216 with nearest-neighbor display; the interactive map remains a separate 280×192 canvas driven by discovered routes. Amber and grayscale themes recolor the illustrations through CSS without reading canvas pixels, preserving support for opening `index.html` directly. Keep `assets/art/` alongside the scripts when downloading the game.
+The 24 panels are stored in two local lossless WebP atlases. `illustrations.js` draws only the scene rectangles, excluding preview labels and borders. The scene canvas is 504×216 with nearest-neighbor display; the interactive map remains a separate 640×520 canvas driven by discovered routes. Amber and grayscale themes recolor the illustrations through CSS without reading canvas pixels, preserving support for opening `index.html` directly. Keep `assets/art/` alongside the scripts when downloading the game.
 
 Images are cached after loading. A completed download redraws the current scene, so rapid travel or loading a save cannot display an earlier scene. Loading or unavailable-art messages leave the text adventure playable. Illustration captions for assistive technology describe the current artwork.
 
 Artwork was created with AI image generation from the approved original art direction, then encoded as lossless WebP with decoded RGB pixels verified identical to the source PNGs. No third-party game sprites are included. The full artwork transfer is approximately 4.8 MB, cached for the session.
 
 Run `node tests/illustrations.test.cjs` for asset coverage, crop bounds, image-cache behavior, late-loading images, failure handling, and script-order checks. The story suite additionally verifies illustration routing through saves and decisions. The atlas crops have also been rendered and visually inspected with a real canvas implementation. Full browser/device testing remains recommended.
+
+## Illustrated road map
+
+The map uses a filled, dithered Florida silhouette with coastal detail, forest and wetland textures, Lake Okeechobee, a compass rose and southwest-trending Keys. Its numbered callouts match a readable location key, avoiding tiny overlapping place names on phones. A current-location artwork card links the map visually to the illustrated scenes. The opaque map window prevents underlying dialogue from showing through.
+
+The map remains code-drawn so discovered locations, actual road connections, theme colors and the Station 17 story gate stay accurate. Roads and the positions of fictional locations are schematic, not navigation directions. Run `node tests/map.test.cjs` to check discovery, hidden routes, edge deduplication, marker numbering, bounds and callout overlap. Starting and fully discovered maps have been rendered for visual inspection.

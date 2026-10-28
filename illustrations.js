@@ -62,11 +62,13 @@ function loadIllustrationAtlas(key) {
     state.status = "ready";
     // Resolve the CURRENT scene after loading, never the scene that requested it.
     renderTitleIllustration();
+    if (typeof renderMapIllustration === "function") renderMapIllustration();
     if (typeof renderScene === "function") renderScene();
   };
   image.onerror = () => {
     state.status = "error";
     renderTitleIllustration();
+    if (typeof renderMapIllustration === "function") renderMapIllustration();
     if (typeof renderScene === "function") renderScene();
   };
   image.src = ILLUSTRATION_ATLASES[key];
